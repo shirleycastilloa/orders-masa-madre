@@ -67,11 +67,12 @@ function PaymentBadge({ paid }: { paid: boolean }) {
 }
 
 function OrderCard({ order }: { order: Order }) {
+  const note = order.notas?.trim();
   return <button className="order-card" onClick={() => navigate(`/ordenes/${order.id}`)}>
     <div className="order-card-top"><div className="order-identity"><span className="order-alias">{order.cliente.alias}</span><span className="order-weekday">{formatWeekday(order.fecha_entrega)}</span></div><PaymentBadge paid={order.pagada} /></div>
     <div className="order-date-row"><span>{formatDate(order.fecha_entrega)}</span><strong>{formatTime(order.hora_entrega)}</strong></div>
     <div className="order-detail-row"><span>{order.tipo_pan}</span><span>{order.ingrediente_adicional}</span></div>
-    <div className="order-notes" title={order.notas ?? 'Sin notas'}><span className="muted-label">Notas:</span> {order.notas || 'Sin notas'}</div>
+    <div className="order-notes" title={note || 'Sin notas'}><span className="muted-label">Notas:</span>{' '}<span className={`order-note-text${note ? ' has-notes' : ''}`}>{note || 'Sin notas'}</span></div>
     <div className="order-card-bottom"><span className="muted-label">Monto a pagar</span><strong className="amount">{formatCurrency(order.monto_colones)}</strong></div>
     <span className="card-chevron" aria-hidden="true">›</span>
   </button>;

@@ -66,5 +66,5 @@ test('muestra el día de entrega y las notas en la tarjeta activa', async ({ pag
   }], error: null } }));
   await page.goto('/');
   await expect(page.getByText('Sábado')).toBeVisible();
-  await expect(page.getByText('Notas: Entregar temprano antes de las 10')).toBeVisible();
+  await expect(page.getByText('Entregar temprano antes de las 10')).toHaveClass(/has-notes/);
 });
