@@ -16,6 +16,20 @@ La aplicación permitirá:
 - Versionar el código en GitHub bajo el usuario shirleycastilloa.
 - Desplegar la aplicación en Render usando el plan gratuito.
 
+## Estado de implementación — actualizado 2026-10-29
+
+La especificación se mantiene sincronizada con la implementación publicada:
+
+- Aplicación en producción: https://orders-masa-madre.onrender.com
+- Repositorio: https://github.com/shirleycastilloa/orders-masa-madre
+- Base remota: Turso, base `orders-masa-madre`, región `aws-us-east-1`.
+- Rama de despliegue: `main`.
+- Última funcionalidad implementada: mantenimientos de clientes, tipos de pan e ingredientes adicionales desde la pantalla principal.
+- Corrección aplicada: “Agregar un nuevo cliente” ahora funciona desde “Registrar orden”; se eliminó el formulario HTML anidado y el cliente creado queda seleccionado automáticamente.
+- Estado: etapas 0 a 7 completadas; pruebas unitarias, de integración y end-to-end ejecutadas correctamente; servicio desplegado y con `/api/health` operativo.
+
+La ausencia de autenticación y autorización sigue siendo una decisión explícita del alcance. La URL pública permite consultar y modificar los datos a cualquier persona que la conozca.
+
 ## 2. Arquitectura propuesta
 
 ### 2.1 Arquitectura general
@@ -103,7 +117,7 @@ Seed inicial:
 - Bolla
 - Cuadrado
 
-El catálogo debe poder editarse desde mantenimiento o configuración, no necesariamente desde la pantalla principal.
+El catálogo se administra desde el panel superior de la pantalla principal, mediante la pantalla de mantenimiento de tipos de pan. Se pueden crear, editar y eliminar registros. Un tipo utilizado por una orden no se puede eliminar; la API devuelve un conflicto y conserva la integridad histórica.
 
 ### 3.3 Ingredientes adicionales
 
@@ -121,7 +135,7 @@ Seed inicial:
 - Pistachos
 - Semillas
 
-Sin ingredientes adicionales es un registro normal del catálogo, no un valor nulo.
+Sin ingredientes adicionales es un registro normal del catálogo, no un valor nulo. El catálogo se administra desde el panel superior de la pantalla principal, mediante la pantalla de mantenimiento de ingredientes adicionales. Se pueden crear, editar y eliminar registros; un ingrediente utilizado por una orden no se puede eliminar.
 
 ### 3.4 Órdenes
 
@@ -240,6 +254,12 @@ Formato de validación:
 
 - GET /api/health: responde 200 si la aplicación está viva; no expone secretos.
 - GET /api/catalogos: devuelve tipos de pan e ingredientes ordenados alfabéticamente.
+- POST /api/catalogos/tipos-pan: crea un tipo de pan con `tipo` obligatorio.
+- PATCH /api/catalogos/tipos-pan/:id: actualiza el tipo de pan.
+- DELETE /api/catalogos/tipos-pan/:id: elimina el tipo si no tiene órdenes relacionadas.
+- POST /api/catalogos/ingredientes: crea un ingrediente con `ingrediente` obligatorio.
+- PATCH /api/catalogos/ingredientes/:id: actualiza el ingrediente.
+- DELETE /api/catalogos/ingredientes/:id: elimina el ingrediente si no tiene órdenes relacionadas.
 
 ### 5.2 Clientes
 
@@ -247,6 +267,7 @@ Formato de validación:
 - GET /api/clientes/:id: detalle.
 - POST /api/clientes: requiere alias; el resto es opcional.
 - PATCH /api/clientes/:id: actualiza los campos enviados.
+- DELETE /api/clientes/:id: elimina el cliente solo si no tiene órdenes relacionadas.
 
 ### 5.3 Órdenes
 
@@ -296,6 +317,9 @@ Orden:
 2. Barra superior con:
    - + Registrar orden.
    - Histórico.
+   - Clientes.
+   - Tipos de pan.
+   - Ingredientes.
 3. Estado de carga/error.
 4. Lista de órdenes activas.
 
@@ -332,6 +356,8 @@ Campos:
 6. Monto a pagar: entrada controlada, con miles y sin decimales.
 7. ¿Ya pagó?: checkbox desmarcado por defecto.
 8. Fecha de registro: informativa y no editable; la define el servidor.
+
+La acción + Nuevo cliente abre un panel independiente dentro de la pantalla. No se anidan formularios HTML: el alta del cliente se ejecuta con su propia acción y, al completarse, el cliente recién creado se selecciona en la orden.
 
 Acciones:
 
@@ -383,16 +409,13 @@ Incluir estado vacío y botón para volver a activas. La primera versión puede 
 
 ### 6.6 Clientes y catálogos
 
-Para que registrar una orden sea operable se necesita:
+El inicio incluye un panel superior de mantenimiento con tres accesos:
 
-- Crear cliente desde el selector.
-- Editar cliente.
-- Buscar clientes por alias.
-- Crear y editar tipos de pan.
-- Crear y editar ingredientes.
-- Impedir borrar catálogos usados por órdenes.
+- `/mantenimiento/clientes`: lista, búsqueda, alta, edición y eliminación de clientes. El alias es obligatorio; el borrado se rechaza si el cliente tiene órdenes relacionadas.
+- `/mantenimiento/panes`: alta, edición y eliminación de tipos de pan. El campo `tipo` es obligatorio y único.
+- `/mantenimiento/ingredientes`: alta, edición y eliminación de ingredientes adicionales. El campo `ingrediente` es obligatorio y único.
 
-Pueden implementarse en /clientes y /configuracion sin ocupar espacio en la barra principal.
+Los mantenimientos son accesibles con botones grandes y táctiles desde móvil. Cada pantalla muestra estados de carga, vacío, error y confirmación. Los registros utilizados por órdenes no se eliminan para evitar romper referencias históricas; la interfaz muestra el error devuelto por la API.
 
 ## 7. Fechas, horas y montos
 
@@ -414,13 +437,11 @@ Pueden implementarse en /clientes y /configuracion sin ocupar espacio en la barr
 orders-masa-madre/
 ├── client/
 │   ├── src/
-│   │   ├── components/
-│   │   ├── features/orders/
-│   │   ├── features/clients/
-│   │   ├── features/catalogs/
-│   │   ├── pages/
+│   │   ├── App.tsx
 │   │   ├── lib/api.ts
-│   │   └── styles/
+│   │   ├── lib/format.ts
+│   │   ├── main.tsx
+│   │   └── styles.css
 │   └── package.json
 ├── server/
 │   ├── src/
@@ -429,13 +450,14 @@ orders-masa-madre/
 │   │   ├── db/migrations/
 │   │   ├── db/seed.ts
 │   │   ├── routes/
-│   │   ├── services/
-│   │   ├── validators/
+│   │   ├── validators.ts
 │   │   └── app.ts
 │   └── package.json
 ├── shared/
-│   └── src/schemas.ts
+│   └── src/
 ├── tests/
+│   └── e2e/orders.spec.ts
+├── playwright.config.ts
 ├── .env.example
 ├── .gitignore
 ├── package.json
@@ -443,6 +465,8 @@ orders-masa-madre/
 ├── README.md
 └── ESPECIFICACION-SISTEMA-ORDENES.md
 ~~~
+
+La estructura anterior representa la estructura implementada. Algunas carpetas previstas inicialmente se consolidaron en los archivos actuales para mantener la primera versión simple y fácil de desplegar.
 
 ## 9. Variables de entorno
 
@@ -468,9 +492,11 @@ APP_TIMEZONE=America/Guatemala
 
 Nunca guardar tokens en código, README, commits, variables públicas del frontend o logs.
 
-## 10. Construcción por etapas
+## 10. Construcción por etapas y estado
 
-### Etapa 0 — Preparación
+Las etapas descritas a continuación fueron ejecutadas. Se conserva el detalle para documentar la trazabilidad del proyecto y la forma de repetir el despliegue.
+
+### Etapa 0 — Preparación — Completada
 
 Entregables:
 
@@ -480,9 +506,9 @@ Entregables:
 - Confirmación de que la falta de autenticación es intencional.
 - Definición de quién conocerá la URL pública.
 
-Criterio: no quedan decisiones que cambien el modelo de datos.
+Criterio cumplido: no quedan decisiones pendientes que cambien el modelo de datos.
 
-### Etapa 1 — Inicialización local y GitHub
+### Etapa 1 — Inicialización local y GitHub — Completada
 
 1. Crear TypeScript, frontend y backend.
 2. Configurar scripts dev, build, start, lint, test, db:migrate y db:seed.
@@ -505,7 +531,7 @@ git push -u origin main
 
 Guía oficial: https://docs.github.com/en/repositories/creating-and-managing-repositories/quickstart-for-repositories
 
-### Etapa 2 — Crear y conectar Turso
+### Etapa 2 — Crear y conectar Turso — Completada
 
 1. Crear o iniciar sesión en Turso.
 2. Instalar el CLI.
@@ -542,7 +568,7 @@ export const db = createClient({
 
 La aplicación debe fallar al arrancar con un mensaje claro si falta una variable.
 
-### Etapa 3 — Migraciones y seed
+### Etapa 3 — Migraciones y seed — Completada
 
 1. Implementar esquema.
 2. Crear migración versionada.
@@ -552,9 +578,9 @@ La aplicación debe fallar al arrancar con un mensaje claro si falta una variabl
 6. Probar CRUD de una orden.
 7. Probar que completar conserva el registro con activa=0.
 
-Criterio: una base Turso nueva queda lista solo ejecutando migraciones y seed.
+Criterio cumplido: una base Turso nueva queda lista ejecutando migraciones y seed.
 
-### Etapa 4 — API y negocio
+### Etapa 4 — API y negocio — Completada
 
 1. Crear rutas REST.
 2. Crear validadores Zod.
@@ -565,9 +591,9 @@ Criterio: una base Turso nueva queda lista solo ejecutando migraciones y seed.
 7. Crear health check.
 8. Manejar errores sin filtrar secretos ni SQL interno.
 
-Criterio: la API se prueba sin depender de la interfaz.
+Criterio cumplido: la API se prueba sin depender de la interfaz.
 
-### Etapa 5 — Interfaz mobile first
+### Etapa 5 — Interfaz mobile first — Completada
 
 1. Definir layout, colores y componentes táctiles.
 2. Implementar inicio.
@@ -578,11 +604,13 @@ Criterio: la API se prueba sin depender de la interfaz.
 7. Implementar completar/eliminar.
 8. Implementar histórico.
 9. Implementar loading, error y vacío.
-10. Verificar móvil, tablet y escritorio.
+10. Implementar mantenimientos de clientes, tipos de pan e ingredientes.
+11. Corregir el alta rápida de cliente desde Registrar orden.
+12. Verificar móvil, tablet y escritorio.
 
-Criterio: los flujos principales funcionan desde teléfono sin zoom ni desplazamiento horizontal.
+Criterio cumplido: los flujos principales y los mantenimientos funcionan desde teléfono sin zoom ni desplazamiento horizontal.
 
-### Etapa 6 — Pruebas
+### Etapa 6 — Pruebas — Completada
 
 Unitarias:
 
@@ -611,6 +639,8 @@ End-to-end:
 5. Completarla.
 6. Verla en histórico.
 7. Eliminarla.
+8. Abrir los mantenimientos desde la pantalla principal.
+9. Crear un cliente desde Registrar orden y verificar que quede seleccionado.
 
 Viewport mínimo:
 
@@ -619,7 +649,7 @@ Viewport mínimo:
 - 768 × 1024.
 - 1280 × 800.
 
-### Etapa 7 — GitHub y Render
+### Etapa 7 — GitHub y Render — Completada
 
 Preparación:
 
@@ -631,7 +661,7 @@ Preparación:
 6. Escuchar en 0.0.0.0 y usar process.env.PORT.
 7. Confirmar GET /api/health.
 
-Render recomienda crear New > Web Service y conectar el repositorio. Los pushes de la rama conectada pueden activar despliegues automáticos: https://render.com/docs/deploy-node-express-app
+Render recomienda crear New > Web Service y conectar el repositorio. El servicio implementado usa `render.yaml`, se conecta a `shirleycastilloa/orders-masa-madre` y despliega automáticamente los pushes de `main`: https://render.com/docs/deploy-node-express-app
 
 Configuración:
 
@@ -640,7 +670,7 @@ Configuración:
 | Runtime | Node |
 | Branch | main |
 | Plan | Free |
-| Build command | npm ci && npm run build && npm run db:migrate && npm run db:seed |
+| Build command | npm ci --include=dev && npm run build && npm run db:migrate && npm run db:seed |
 | Start command | npm start |
 | Health check | /api/health |
 
@@ -659,7 +689,7 @@ No crear variables VITE_ con credenciales.
 
 Validación posterior:
 
-1. Abrir la URL onrender.com.
+1. Abrir https://orders-masa-madre.onrender.com.
 2. Consultar /api/health.
 3. Crear una orden de prueba.
 4. Editarla.
@@ -667,7 +697,7 @@ Validación posterior:
 6. Eliminarla y verificar el borrado.
 7. Revisar logs sin secretos.
 8. Confirmar tras redeploy que los datos siguen en Turso.
-9. Documentar URL y fecha de despliegue.
+9. Documentar URL y fecha de despliegue: https://orders-masa-madre.onrender.com, verificada el 2026-10-29.
 
 ## 11. Pruebas de aceptación
 
@@ -675,6 +705,8 @@ Validación posterior:
 
 - Se crea con solo alias.
 - Se edita.
+- Se puede buscar desde mantenimiento.
+- Se puede eliminar si no tiene órdenes relacionadas.
 - Alias vacío se rechaza en frontend y backend.
 
 ### Catálogos
@@ -682,6 +714,8 @@ Validación posterior:
 - Existen Bolla y Cuadrado.
 - Existen Pasas, Frutos rojos, Cherrys, Pistachos, Semillas y Sin ingredientes adicionales.
 - Se pueden seleccionar en una orden.
+- Se pueden crear, editar y eliminar tipos e ingredientes desde los mantenimientos superiores.
+- No se permite eliminar un tipo o ingrediente utilizado por una orden.
 
 ### Órdenes
 
@@ -720,6 +754,8 @@ Validación posterior:
 - Conexión Turso.
 - Migraciones y seed.
 - CRUD mínimo de clientes.
+- Mantenimiento completo de clientes.
+- Mantenimiento completo de tipos de pan e ingredientes adicionales.
 - CRUD de órdenes.
 - Completar y borrar.
 - Inicio.
@@ -729,7 +765,7 @@ Validación posterior:
 - Validaciones.
 - Render + GitHub + variables de entorno.
 
-### P1 — Operación cómoda
+### P1 — Operación cómoda — Completada
 
 - Búsqueda de clientes.
 - Mantenimiento de catálogos.
@@ -748,7 +784,7 @@ Validación posterior:
 - Auditoría de cambios.
 - Copias de seguridad avanzadas.
 
-## 13. Definición de terminado
+## 13. Definición de terminado — Alcanzada
 
 El sistema está listo cuando:
 
@@ -759,5 +795,7 @@ El sistema está listo cuando:
 5. Se cumplen los criterios de aceptación.
 6. README contiene instalación, variables, despliegue y advertencia de no autenticación.
 7. No hay secretos en el repositorio.
-8. Las pruebas principales pasan.
+8. La aplicación está disponible en https://orders-masa-madre.onrender.com y el health check responde correctamente.
+9. Los mantenimientos de clientes y catálogos están disponibles desde la pantalla principal.
+10. Las pruebas principales pasan.
 
