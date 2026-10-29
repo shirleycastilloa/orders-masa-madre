@@ -9,6 +9,7 @@ La aplicación permitirá:
 - Registrar clientes y seleccionarlos al crear una orden.
 - Mantener catálogos de tipos de pan e ingredientes adicionales.
 - Crear, consultar, editar y eliminar órdenes.
+- Capturar notas específicas para cada orden y mostrarlas en sus tarjetas y detalle.
 - Marcar una orden como completada, trasladándola de activas a históricas.
 - Mostrar las órdenes activas agrupadas por mes de entrega.
 - Consultar el histórico agrupado por año/mes y ordenado por fecha de registro.
@@ -60,10 +61,10 @@ Esta arquitectura evita CORS entre frontend y backend en producción y permite d
 - Backend: Node.js + Express.
 - Base de datos: Turso Cloud/libSQL remoto.
 - Cliente de base de datos: @libsql/client.
-- ORM recomendado: Drizzle ORM para esquema tipado y migraciones. También se puede usar @libsql/client directamente con SQL parametrizado.
-- Validación: Zod compartido entre API y frontend.
-- Pruebas: Vitest para unitarias y Playwright para flujos de navegador.
-- Calidad: ESLint + Prettier.
+- Persistencia y migraciones: `@libsql/client` con SQL parametrizado y migraciones SQL versionadas; no se usa ORM.
+- Validación: Zod en el backend y validación nativa de formularios en el frontend.
+- Pruebas: Vitest para unitarias/integración y Playwright para flujos de navegador.
+- Calidad: comprobación TypeScript mediante los scripts de lint y build.
 - Versionamiento: Git/GitHub.
 - Hosting: Render Free Web Service.
 
@@ -583,6 +584,7 @@ La aplicación debe fallar al arrancar con un mensaje claro si falta una variabl
 5. Crear índices.
 6. Probar CRUD de una orden.
 7. Probar que completar conserva el registro con activa=0.
+8. Agregar `ordenes.notas` mediante migración y retirar la columna legacy de clientes.
 
 Criterio cumplido: una base Turso nueva queda lista ejecutando migraciones y seed.
 
@@ -590,12 +592,13 @@ Criterio cumplido: una base Turso nueva queda lista ejecutando migraciones y see
 
 1. Crear rutas REST.
 2. Crear validadores Zod.
-3. Crear servicios de clientes, catálogos y órdenes.
+3. Implementar las operaciones de clientes, catálogos y órdenes en las rutas API.
 4. Usar SQL parametrizado.
 5. Implementar ordenamiento.
 6. Implementar completar y borrado físico.
 7. Crear health check.
-8. Manejar errores sin filtrar secretos ni SQL interno.
+8. Implementar creación y edición de notas por orden.
+9. Manejar errores sin filtrar secretos ni SQL interno.
 
 Criterio cumplido: la API se prueba sin depender de la interfaz.
 
@@ -612,7 +615,8 @@ Criterio cumplido: la API se prueba sin depender de la interfaz.
 9. Implementar loading, error y vacío.
 10. Implementar mantenimientos de clientes, tipos de pan e ingredientes.
 11. Corregir el alta rápida de cliente desde Registrar orden.
-12. Verificar móvil, tablet y escritorio.
+12. Implementar el campo Notas de la orden y la regla visual de texto rojo cuando tiene contenido.
+13. Verificar móvil, tablet y escritorio.
 
 Criterio cumplido: los flujos principales y los mantenimientos funcionan desde teléfono sin zoom ni desplazamiento horizontal.
 
@@ -624,6 +628,7 @@ Unitarias:
 - Fechas y horas.
 - Agrupación por mes/año.
 - Validación de cliente y orden.
+- Notas opcionales de la orden.
 - Completado.
 
 API:
@@ -647,6 +652,8 @@ End-to-end:
 7. Eliminarla.
 8. Abrir los mantenimientos desde la pantalla principal.
 9. Crear un cliente desde Registrar orden y verificar que quede seleccionado.
+10. Registrar una orden con notas y verificar su color rojo en la tarjeta.
+11. Registrar una orden sin notas y verificar el formato normal de “Sin notas”.
 
 Viewport mínimo:
 
@@ -680,7 +687,7 @@ Configuración:
 | Start command | npm start |
 | Health check | /api/health |
 
-Si migrar durante el build genera concurrencia, ejecutar migraciones manualmente contra Turso antes de desplegar. No ejecutar migraciones destructivas automáticamente.
+El build ejecuta las migraciones pendientes antes del seed. En esta versión, `002_order_notes` agrega el campo de notas a las órdenes y `003_remove_client_notes` elimina la columna legacy que ya no pertenece al modelo de clientes; esta modificación debe conservarse versionada y revisarse antes de un redeploy.
 
 Variables de Render:
 
@@ -733,8 +740,12 @@ Validación posterior:
 - Orden nueva activa.
 - Inicio muestra solo activas.
 - Activas ordenadas y agrupadas por mes/año.
+- Cada tarjeta muestra el día de entrega debajo del alias en azul.
+- Cada tarjeta muestra las notas de su propia orden antes del monto en una sola línea.
 - Tarjeta abre todos los datos.
 - Se puede editar.
+- Se pueden capturar notas opcionales específicas de la orden.
+- Las notas con contenido se muestran en rojo en las tarjetas; sin contenido se muestra “Sin notas” con formato normal.
 - Se puede completar y ver en histórico.
 - Se puede eliminar y confirmar que ya no existe en Turso.
 
@@ -763,6 +774,7 @@ Validación posterior:
 - Mantenimiento completo de clientes.
 - Mantenimiento completo de tipos de pan e ingredientes adicionales.
 - CRUD de órdenes.
+- Notas específicas por orden.
 - Completar y borrar.
 - Inicio.
 - Nueva orden.

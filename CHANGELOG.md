@@ -35,3 +35,5 @@ Primera versión funcional publicada en Render.
 - `7847528` — pruebas.
 - `c98cc2a` — configuración de Render mediante Blueprint.
 - `39075a0` — mantenimientos y corrección del alta rápida de cliente.
+- `daa6397` — notas trasladadas de clientes a órdenes y migraciones 002/003.
+- `45e1ac4` — notas con contenido resaltadas en rojo en las tarjetas.

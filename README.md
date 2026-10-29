@@ -19,7 +19,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Registro de órdenes con cliente, fecha, hora, tipo de pan, ingrediente adicional, monto en colones y estado de pago.
 - Edición, eliminación física y marcado de órdenes como completadas.
 - Histórico de órdenes agrupado por año/mes y ordenado por fecha de registro.
-- En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas de la orden antes del monto, con truncamiento visual en una línea.
+- En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas de la orden antes del monto, con truncamiento visual en una línea. Las notas con contenido se muestran en rojo; cuando no existen, se muestra “Sin notas” con formato normal.
 - Mantenimiento de clientes desde la parte superior de la pantalla principal: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
@@ -138,7 +138,7 @@ npm run lint
 npm run build
 ```
 
-La suite end-to-end cubre el alta de una orden, el alta rápida de cliente y la navegación hacia los mantenimientos. Las pruebas de integración de API contra Turso usan datos temporales, los eliminan al terminar y utilizan tokens temporales invalidados después de la prueba.
+La suite end-to-end cubre el alta de una orden, el alta rápida de cliente, el día y las notas de una tarjeta activa y la navegación hacia los mantenimientos. Las pruebas de integración de API contra Turso usan datos temporales, los eliminan al terminar y utilizan tokens temporales invalidados después de la prueba.
 
 ## Etapas completadas
 
@@ -153,7 +153,8 @@ La suite end-to-end cubre el alta de una orden, el alta rápida de cliente y la 
 | 6. Pruebas | Unitarias, integración y Playwright | `7847528` |
 | 7. Render | Blueprint, health check y despliegue desde GitHub | `c98cc2a` |
 | Actualización posterior | CRUD de clientes y catálogos; corrección de nuevo cliente | `39075a0` |
-| Actualización posterior | Notas específicas por orden y migraciones 002/003 | Versión `0.1.1` |
+| Actualización posterior | Notas específicas por orden y migraciones 002/003 | `daa6397` |
+| Actualización posterior | Notas con contenido resaltadas en rojo | `45e1ac4` |
 
 El detalle funcional y técnico está en [`ESPECIFICACION-SISTEMA-ORDENES.md`](ESPECIFICACION-SISTEMA-ORDENES.md). El historial resumido de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 
