@@ -3,6 +3,17 @@ services:
     name: orders-masa-madre
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build
+    region: ohio
+    branch: main
+    buildCommand: npm ci --include=dev && npm run build && npm run db:migrate && npm run db:seed
     startCommand: npm start
     healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_TIMEZONE
+        value: America/Guatemala
+      - key: TURSO_DATABASE_URL
+        value: libsql://orders-masa-madre-shirleycastilloa.aws-us-east-1.turso.io
+      - key: TURSO_AUTH_TOKEN
+        sync: false
