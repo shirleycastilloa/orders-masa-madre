@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/app.js",
     "db:check": "tsx src/db/check.ts",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:seed": "tsx src/db/seed.ts",
+    "db:status": "tsx src/db/status.ts",
     "lint": "tsc --noEmit",
     "test": "vitest run"
   },

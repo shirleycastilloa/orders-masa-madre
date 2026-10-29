@@ -49,4 +49,16 @@ El token de acceso no se guarda en GitHub. Para ejecutar el backend localmente s
 npm run db:check
 ```
 
-El script de verificación ejecuta una consulta mínima contra la base remota. Las migraciones y el seed se implementarán en la siguiente etapa.
+El script de verificación ejecuta una consulta mínima contra la base remota.
+
+## Migraciones y datos iniciales
+
+Con `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN` definidos en el entorno local:
+
+```powershell
+npm run db:migrate
+npm run db:seed
+npm run db:status
+```
+
+La migración `001_initial` crea clientes, tipos de pan, ingredientes adicionales, órdenes, índices y la tabla de control de migraciones. El seed es idempotente y carga Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
