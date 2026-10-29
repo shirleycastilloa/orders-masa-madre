@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, parseAmount } from './format';
+import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, formatWeekday, parseAmount } from './format';
 
 describe('format helpers', () => {
   it('formats colones without decimals and parses separators', () => {
@@ -17,5 +17,6 @@ describe('format helpers', () => {
     expect(formatDate('2026-11-15')).toContain('2026');
     expect(formatDate('2026-11-15').toLowerCase()).toContain('noviembre');
     expect(formatMonth('2026-11-01').toLowerCase()).toContain('noviembre');
+    expect(formatWeekday('2026-11-14')).toBe('Sábado');
   });
 });

@@ -46,11 +46,14 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .order-card:hover { border-color: #c99977; }
 .order-card-top, .order-date-row, .order-detail-row, .order-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
 .order-card-top { margin-bottom: .75rem; }
+.order-identity { display: grid; min-width: 0; gap: .15rem; }
 .order-alias { font-size: 1.1rem; font-weight: 800; }
+.order-weekday { color: #2563eb; font-size: .84rem; font-weight: 800; }
 .order-date-row { color: #7b3f26; font-weight: 650; }
 .order-date-row strong { white-space: nowrap; }
 .order-detail-row { margin-top: .7rem; color: #674f43; font-size: .92rem; }
 .order-detail-row span:last-child { color: #a4643c; text-align: right; }
+.order-notes { min-width: 0; margin-top: .7rem; overflow: hidden; color: #806b5f; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
 .order-card-bottom { margin-top: .9rem; padding-top: .7rem; border-top: 1px solid #f0e8e1; }
 .muted-label, .field-hint { color: #8c7568; font-size: .78rem; }
 .amount { color: #7b3f26; font-size: 1.2rem; }

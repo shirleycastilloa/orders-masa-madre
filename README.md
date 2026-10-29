@@ -19,6 +19,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Registro de órdenes con cliente, fecha, hora, tipo de pan, ingrediente adicional, monto en colones y estado de pago.
 - Edición, eliminación física y marcado de órdenes como completadas.
 - Histórico de órdenes agrupado por año/mes y ordenado por fecha de registro.
+- En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas del cliente antes del monto, con truncamiento visual en una línea.
 - Mantenimiento de clientes desde la parte superior de la pantalla principal: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
@@ -26,7 +27,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Validación en frontend y backend.
 - Health check disponible en `/api/health`.
 
-La acción “Agregar un nuevo cliente” dentro de “Registrar orden” funciona mediante un panel independiente. Se corrigió el problema de formularios HTML anidados que impedía enviar correctamente el alta del cliente; después de crearlo, queda seleccionado automáticamente en la orden.
+La acción “Agregar un nuevo cliente” dentro de “Registrar orden” funciona mediante un panel independiente que permite capturar alias, nombre y notas. Al seleccionar un cliente existente, sus notas se muestran en el registro de la orden como información de solo lectura; se editan desde Mantenimientos > Clientes. Se corrigió el problema de formularios HTML anidados que impedía enviar correctamente el alta del cliente; después de crearlo, queda seleccionado automáticamente en la orden.
 
 ## Stack
 

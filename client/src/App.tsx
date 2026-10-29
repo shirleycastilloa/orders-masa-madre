@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api, ApiClientError, Catalogs, Client, Order } from './lib/api';
-import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, parseAmount } from './lib/format';
+import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, formatWeekday, parseAmount } from './lib/format';
 
 type MaintenanceKind = 'clientes' | 'panes' | 'ingredientes';
 type Route = { page: 'home' | 'new' | 'detail' | 'history' | 'maintenance'; id?: number; kind?: MaintenanceKind };
@@ -68,9 +68,10 @@ function PaymentBadge({ paid }: { paid: boolean }) {
 
 function OrderCard({ order }: { order: Order }) {
   return <button className="order-card" onClick={() => navigate(`/ordenes/${order.id}`)}>
-    <div className="order-card-top"><span className="order-alias">{order.cliente.alias}</span><PaymentBadge paid={order.pagada} /></div>
+    <div className="order-card-top"><div className="order-identity"><span className="order-alias">{order.cliente.alias}</span><span className="order-weekday">{formatWeekday(order.fecha_entrega)}</span></div><PaymentBadge paid={order.pagada} /></div>
     <div className="order-date-row"><span>{formatDate(order.fecha_entrega)}</span><strong>{formatTime(order.hora_entrega)}</strong></div>
     <div className="order-detail-row"><span>{order.tipo_pan}</span><span>{order.ingrediente_adicional}</span></div>
+    <div className="order-notes" title={order.cliente.notas ?? 'Sin notas'}><span className="muted-label">Notas:</span> {order.cliente.notas || 'Sin notas'}</div>
     <div className="order-card-bottom"><span className="muted-label">Monto a pagar</span><strong className="amount">{formatCurrency(order.monto_colones)}</strong></div>
     <span className="card-chevron" aria-hidden="true">›</span>
   </button>;
@@ -201,16 +202,17 @@ function initialForm(order?: Order): OrderFormValues {
 function InlineClientForm({ onCreated }: { onCreated: (client: Client) => void }) {
   const [alias, setAlias] = useState('');
   const [name, setName] = useState('');
+  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   async function submit() {
     if (!alias.trim()) { setError(new Error('El alias es obligatorio.')); return; }
     setSaving(true); setError(null);
-    try { const client = await api.createClient({ alias, nombre_completo: name }); onCreated(client); setAlias(''); setName(''); } catch (submitError) { setError(submitError); } finally { setSaving(false); }
+    try { const client = await api.createClient({ alias, nombre_completo: name, notas: notes }); onCreated(client); setAlias(''); setName(''); setNotes(''); } catch (submitError) { setError(submitError); } finally { setSaving(false); }
   }
   return <div className="inline-client-form">
     <div className="inline-form-heading"><strong>Nuevo cliente</strong><span>Solo el alias es obligatorio</span></div>
-    <div className="form-grid two-columns"><label>Alias<input value={alias} onChange={(event) => setAlias(event.target.value)} required /></label><label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} /></label></div>
+    <div className="form-grid two-columns"><label>Alias<input value={alias} onChange={(event) => setAlias(event.target.value)} required /></label><label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} /></label><label>Notas<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Notas del cliente" /></label></div>
     <ErrorMessage error={error} /><button type="button" className="button button-secondary button-small" onClick={() => void submit()} disabled={saving}>{saving ? 'Guardando…' : 'Crear cliente'}</button>
   </div>;
 }
@@ -228,6 +230,7 @@ function OrderFormPage({ order }: { order?: Order }) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   useEffect(() => { Promise.all([api.getCatalogs(), api.getClients()]).then(([catalogData, clientData]) => { setCatalogs(catalogData); setClients(clientData); }).catch(setError).finally(() => setLoading(false)); }, []);
   const filteredClients = clients.filter((client) => `${client.alias} ${client.nombre_completo ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase()));
+  const selectedClient = clients.find((client) => String(client.id) === values.cliente_id);
   const update = (key: keyof OrderFormValues, value: string | boolean) => setValues((current) => ({ ...current, [key]: value }));
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setError(null); setFieldErrors({});
@@ -243,6 +246,7 @@ function OrderFormPage({ order }: { order?: Order }) {
       <label>Cliente<select value={values.cliente_id} onChange={(event) => update('cliente_id', event.target.value)} required><option value="">Selecciona un cliente</option>{filteredClients.map((client) => <option key={client.id} value={client.id}>{client.alias}{client.nombre_completo ? ` — ${client.nombre_completo}` : ''}</option>)}</select></label>
       <div className="search-row"><input aria-label="Buscar cliente" placeholder="Buscar cliente…" value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} /><button type="button" className="button button-secondary button-small" onClick={() => setShowNewClient((current) => !current)}>{showNewClient ? 'Cerrar' : '+ Nuevo'}</button></div>
       {showNewClient ? <InlineClientForm onCreated={handleClientCreated} /> : null}
+      {selectedClient ? <label className="selected-client-notes">Notas del cliente<textarea value={selectedClient.notas ?? ''} readOnly rows={2} placeholder="Sin notas registradas" /><small className="field-hint">Puedes editarlas desde Mantenimientos &gt; Clientes.</small></label> : null}
       <div className="form-grid two-columns"><label>Fecha de entrega<input type="date" value={values.fecha_entrega} onChange={(event) => update('fecha_entrega', event.target.value)} required />{fieldErrors.fecha_entrega ? <small className="field-error">{fieldErrors.fecha_entrega}</small> : null}</label><label>Hora de entrega<input type="time" value={values.hora_entrega} onChange={(event) => update('hora_entrega', event.target.value)} required /><small className="field-hint">Se mostrará en formato am/pm</small></label></div>
       <div className="form-grid two-columns"><label>Tipo de pan<select value={values.tipo_pan_id} onChange={(event) => update('tipo_pan_id', event.target.value)} required><option value="">Selecciona</option>{catalogs.tipos_pan.map((item) => <option key={item.id} value={item.id}>{item.tipo}</option>)}</select></label><label>Ingredientes adicionales<select value={values.ingrediente_adicional_id} onChange={(event) => update('ingrediente_adicional_id', event.target.value)} required><option value="">Selecciona</option>{catalogs.ingredientes_adicionales.map((item) => <option key={item.id} value={item.id}>{item.ingrediente}</option>)}</select></label></div>
       <label>Monto a pagar<input inputMode="numeric" value={values.monto_colones} onChange={(event) => update('monto_colones', formatAmountInput(event.target.value))} placeholder="0" required /><small className="field-hint">Colones, sin decimales</small></label>
@@ -266,7 +270,7 @@ function DetailPage({ id }: { id: number }) {
   if (!order) return <div className="page"><Header title="Orden no encontrada" onBack={() => navigate('/')} /><main className="page-content"><ErrorMessage error={error ?? new Error('La orden no existe.')} /></main></div>;
   return <div className="page"><Header title={`Orden #${order.id}`} onBack={() => navigate(order.activa ? '/' : '/historial')} /><main className="page-content detail-content">
     <div className="detail-status"><span className={`status-pill ${order.activa ? 'active' : 'completed'}`}>{order.activa ? 'Activa' : 'Completada'}</span><PaymentBadge paid={order.pagada} /></div>
-    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd>{order.pagada ? 'Pagada' : 'Pendiente'}</dd></div></dl></section>
+    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Notas del cliente</dt><dd>{order.cliente.notas || 'Sin notas'}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd>{order.pagada ? 'Pagada' : 'Pendiente'}</dd></div></dl></section>
     <ErrorMessage error={actionError} />
     <div className="detail-actions"><button className="button button-primary" onClick={() => navigate(`/ordenes/${order.id}/editar`)} disabled={actionLoading}>Editar orden</button>{order.activa ? <button className="button button-secondary" onClick={complete} disabled={actionLoading}>{actionLoading ? 'Procesando…' : 'Marcar completada'}</button> : null}<button className="button button-danger" onClick={remove} disabled={actionLoading}>Eliminar orden</button></div>
   </main></div>;

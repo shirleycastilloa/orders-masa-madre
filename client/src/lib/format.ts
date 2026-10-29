@@ -6,6 +6,11 @@ export function formatDate(value: string) {
   return new Intl.DateTimeFormat('es-GT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
 }
 
+export function formatWeekday(value: string) {
+  const label = new Intl.DateTimeFormat('es-GT', { weekday: 'long' }).format(new Date(`${value}T12:00:00`));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function formatMonth(value: string) {
   const label = new Intl.DateTimeFormat('es-GT', { month: 'long', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
   return label.charAt(0).toUpperCase() + label.slice(1);

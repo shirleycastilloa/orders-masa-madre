@@ -326,10 +326,12 @@ Orden:
 Cada tarjeta muestra:
 
 - Alias.
+- Día de la semana de entrega en español, debajo del alias y en azul.
 - Fecha de entrega.
 - Hora en am/pm.
 - Tipo de pan.
 - Ingrediente adicional.
+- Notas del cliente antes del monto, en una sola línea con elipsis cuando exceden el ancho disponible.
 - Monto con separador de miles y sin decimales.
 - Pagada o Pendiente con texto y color/icono.
 
@@ -357,7 +359,9 @@ Campos:
 7. ¿Ya pagó?: checkbox desmarcado por defecto.
 8. Fecha de registro: informativa y no editable; la define el servidor.
 
-La acción + Nuevo cliente abre un panel independiente dentro de la pantalla. No se anidan formularios HTML: el alta del cliente se ejecuta con su propia acción y, al completarse, el cliente recién creado se selecciona en la orden.
+La acción + Nuevo cliente abre un panel independiente dentro de la pantalla. El panel permite capturar alias, nombre completo y notas del cliente. No se anidan formularios HTML: el alta del cliente se ejecuta con su propia acción y, al completarse, el cliente recién creado se selecciona en la orden.
+
+Al seleccionar un cliente existente, el formulario muestra sus notas como información de solo lectura. Las notas pertenecen al cliente y se editan desde Mantenimientos > Clientes; no son un campo independiente de la orden.
 
 Acciones:
 
