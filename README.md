@@ -33,3 +33,20 @@ Requisitos: Node.js 22 o superior y npm.
 4. Ejecutar `npm run dev`.
 
 La aplicación no tendrá autenticación ni autorización en esta primera versión. Cualquier persona con la URL podrá consultar y modificar los datos.
+
+## Turso
+
+Base remota configurada:
+
+- Cuenta: `shirleycastilloa`
+- Base: `orders-masa-madre`
+- URL: `libsql://orders-masa-madre-shirleycastilloa.aws-us-east-1.turso.io`
+- Región: `aws-us-east-1`
+
+El token de acceso no se guarda en GitHub. Para ejecutar el backend localmente se debe definir `TURSO_AUTH_TOKEN` en el entorno local junto con `TURSO_DATABASE_URL`. La conexión puede verificarse con:
+
+```powershell
+npm run db:check
+```
+
+El script de verificación ejecuta una consulta mínima contra la base remota. Las migraciones y el seed se implementarán en la siguiente etapa.
