@@ -18,7 +18,6 @@ export const clientCreateSchema = z
     email: optionalEmail,
     mobile: optionalText,
     direccion: optionalText,
-    notas: optionalText,
   })
   .strict();
 
@@ -42,6 +41,7 @@ export const orderCreateSchema = z
     hora_entrega: timeSchema,
     tipo_pan_id: idSchema,
     ingrediente_adicional_id: idSchema,
+    notas: optionalText,
     monto_colones: amountSchema,
     pagada: z.boolean().default(false),
   })

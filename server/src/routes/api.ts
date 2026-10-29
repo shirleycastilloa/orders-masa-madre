@@ -27,6 +27,7 @@ const orderProjection = `
     o.hora_entrega,
     o.tipo_pan_id,
     o.ingrediente_adicional_id,
+    o.notas,
     o.monto_colones,
     o.pagada,
     o.activa,
@@ -35,7 +36,6 @@ const orderProjection = `
     c.email AS cliente_email,
     c.mobile AS cliente_mobile,
     c.direccion AS cliente_direccion,
-    c.notas AS cliente_notas,
     tp.tipo AS tipo_pan,
     ia.ingrediente AS ingrediente_adicional
   FROM ordenes o
@@ -52,7 +52,6 @@ function mapClient(row: Record<string, unknown>) {
     email: row.email,
     mobile: row.mobile,
     direccion: row.direccion,
-    notas: row.notas,
   };
 }
 
@@ -65,6 +64,7 @@ function mapOrder(row: Record<string, unknown>) {
     hora_entrega: row.hora_entrega,
     tipo_pan_id: Number(row.tipo_pan_id),
     ingrediente_adicional_id: Number(row.ingrediente_adicional_id),
+    notas: row.notas,
     monto_colones: Number(row.monto_colones),
     pagada: Number(row.pagada) === 1,
     activa: Number(row.activa) === 1,
@@ -74,7 +74,6 @@ function mapOrder(row: Record<string, unknown>) {
       email: row.cliente_email,
       mobile: row.cliente_mobile,
       direccion: row.cliente_direccion,
-      notas: row.cliente_notas,
     },
     tipo_pan: row.tipo_pan,
     ingrediente_adicional: row.ingrediente_adicional,
@@ -203,14 +202,14 @@ apiRouter.get('/clientes', async (request, response) => {
   const search = typeof request.query.search === 'string' ? request.query.search.trim() : '';
   const result = search
     ? await db.execute({
-        sql: `SELECT id, alias, nombre_completo, email, mobile, direccion, notas
+        sql: `SELECT id, alias, nombre_completo, email, mobile, direccion
               FROM clientes
               WHERE alias LIKE ? COLLATE NOCASE OR nombre_completo LIKE ? COLLATE NOCASE
               ORDER BY alias COLLATE NOCASE ASC`,
         args: [`%${search}%`, `%${search}%`],
       })
     : await db.execute(
-        'SELECT id, alias, nombre_completo, email, mobile, direccion, notas FROM clientes ORDER BY alias COLLATE NOCASE ASC',
+        'SELECT id, alias, nombre_completo, email, mobile, direccion FROM clientes ORDER BY alias COLLATE NOCASE ASC',
       );
   return sendData(response, result.rows.map((row) => mapClient(row as Record<string, unknown>)));
 });
@@ -218,7 +217,7 @@ apiRouter.get('/clientes', async (request, response) => {
 apiRouter.get('/clientes/:id', async (request, response) => {
   const id = getNumericId(request.params.id);
   const result = await db.execute({
-    sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion, notas FROM clientes WHERE id = ?',
+    sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion FROM clientes WHERE id = ?',
     args: [id],
   });
   const row = result.rows[0] as Record<string, unknown> | undefined;
@@ -230,20 +229,19 @@ apiRouter.post('/clientes', async (request, response) => {
   const data = clientCreateSchema.parse(request.body);
   try {
     const result = await db.execute({
-      sql: `INSERT INTO clientes (alias, nombre_completo, email, mobile, direccion, notas)
-            VALUES (?, ?, ?, ?, ?, ?)`,
+      sql: `INSERT INTO clientes (alias, nombre_completo, email, mobile, direccion)
+            VALUES (?, ?, ?, ?, ?)`,
       args: [
         data.alias,
         normalizeOptionalText(data.nombre_completo),
         normalizeOptionalText(data.email),
         normalizeOptionalText(data.mobile),
         normalizeOptionalText(data.direccion),
-        normalizeOptionalText(data.notas),
       ],
     });
     const id = Number(result.lastInsertRowid);
     const created = await db.execute({
-      sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion, notas FROM clientes WHERE id = ?',
+      sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion FROM clientes WHERE id = ?',
       args: [id],
     });
     return sendData(response, mapClient(created.rows[0] as Record<string, unknown>), 201);
@@ -267,7 +265,7 @@ apiRouter.patch('/clientes/:id', async (request, response) => {
     fields.push('alias = ?');
     args.push(data.alias);
   }
-  for (const field of ['nombre_completo', 'email', 'mobile', 'direccion', 'notas'] as const) {
+  for (const field of ['nombre_completo', 'email', 'mobile', 'direccion'] as const) {
     if (data[field] !== undefined) {
       fields.push(`${field} = ?`);
       args.push(normalizeOptionalText(data[field]));
@@ -283,7 +281,7 @@ apiRouter.patch('/clientes/:id', async (request, response) => {
     throw error;
   }
   const updated = await db.execute({
-    sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion, notas FROM clientes WHERE id = ?',
+    sql: 'SELECT id, alias, nombre_completo, email, mobile, direccion FROM clientes WHERE id = ?',
     args: [id],
   });
   return sendData(response, mapClient(updated.rows[0] as Record<string, unknown>));
@@ -326,8 +324,8 @@ apiRouter.post('/ordenes', async (request, response) => {
   const result = await db.execute({
     sql: `INSERT INTO ordenes
       (cliente_id, fecha_registro, fecha_entrega, hora_entrega, tipo_pan_id,
-       ingrediente_adicional_id, monto_colones, pagada, activa)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+       ingrediente_adicional_id, notas, monto_colones, pagada, activa)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
     args: [
       data.cliente_id,
       getBusinessDate(),
@@ -335,6 +333,7 @@ apiRouter.post('/ordenes', async (request, response) => {
       data.hora_entrega,
       data.tipo_pan_id,
       data.ingrediente_adicional_id,
+      normalizeOptionalText(data.notas),
       data.monto_colones,
       data.pagada ? 1 : 0,
     ],
@@ -367,6 +366,7 @@ apiRouter.patch('/ordenes/:id', async (request, response) => {
     hora_entrega: data.hora_entrega,
     tipo_pan_id: data.tipo_pan_id,
     ingrediente_adicional_id: data.ingrediente_adicional_id,
+    notas: data.notas === undefined ? undefined : normalizeOptionalText(data.notas),
     monto_colones: data.monto_colones,
     pagada: data.pagada === undefined ? undefined : data.pagada ? 1 : 0,
   };

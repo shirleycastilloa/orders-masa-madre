@@ -46,13 +46,16 @@ describe.skipIf(!hasDatabaseCredentials)('API integration against Turso', () => 
       hora_entrega: '14:30',
       tipo_pan_id: testBreadTypeId,
       ingrediente_adicional_id: testIngredientId,
+      notas: 'Nota de integración para esta orden',
       monto_colones: 12500,
       pagada: false,
     }).expect(201);
     testOrderId = orderResponse.body.data.id;
     expect(orderResponse.body.data.activa).toBe(true);
+    expect(orderResponse.body.data.notas).toBe('Nota de integración para esta orden');
 
-    await request.patch(`/api/ordenes/${testOrderId}`).send({ monto_colones: 13000, pagada: true }).expect(200);
+    await request.patch(`/api/ordenes/${testOrderId}`).send({ notas: 'Nota actualizada', monto_colones: 13000, pagada: true }).expect(200);
+    expect((await request.get(`/api/ordenes/${testOrderId}`)).body.data.notas).toBe('Nota actualizada');
     const completed = await request.patch(`/api/ordenes/${testOrderId}/completar`).expect(200);
     expect(completed.body.data.activa).toBe(false);
     expect((await request.get('/api/ordenes/historico')).body.data.some((order: { id: number }) => order.id === testOrderId)).toBe(true);

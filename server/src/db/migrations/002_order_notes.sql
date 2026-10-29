@@ -1,0 +1,1 @@
+ALTER TABLE ordenes ADD COLUMN notas TEXT;

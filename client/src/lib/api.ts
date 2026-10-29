@@ -5,7 +5,6 @@ export type Client = {
   email: string | null;
   mobile: string | null;
   direccion: string | null;
-  notas: string | null;
 };
 
 export type Catalogs = {
@@ -23,6 +22,7 @@ export type Order = {
   hora_entrega: string;
   tipo_pan_id: number;
   ingrediente_adicional_id: number;
+  notas: string | null;
   monto_colones: number;
   pagada: boolean;
   activa: boolean;

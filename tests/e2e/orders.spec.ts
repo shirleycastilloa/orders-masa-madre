@@ -25,7 +25,7 @@ test('permite agregar un cliente desde registrar orden', async ({ page }) => {
   await page.route('**/api/catalogos', (route) => route.fulfill({ json: { data: { tipos_pan: [{ id: 1, tipo: 'Bolla' }], ingredientes_adicionales: [{ id: 1, ingrediente: 'Sin ingredientes adicionales' }] }, error: null } }));
   await page.route('**/api/clientes', async (route) => {
     if (route.request().method() === 'POST') {
-      return route.fulfill({ status: 201, json: { data: { id: 10, alias: 'Ana QA', nombre_completo: 'Ana QA', email: null, mobile: null, direccion: null, notas: null }, error: null } });
+      return route.fulfill({ status: 201, json: { data: { id: 10, alias: 'Ana QA', nombre_completo: 'Ana QA', email: null, mobile: null, direccion: null }, error: null } });
     }
     return route.fulfill({ json: { data: [], error: null } });
   });
@@ -59,7 +59,8 @@ test('muestra el día de entrega y las notas en la tarjeta activa', async ({ pag
     monto_colones: 12500,
     pagada: false,
     activa: true,
-    cliente: { id: 10, alias: 'Ana QA', nombre_completo: 'Ana QA', email: null, mobile: null, direccion: null, notas: 'Entregar temprano antes de las 10' },
+    notas: 'Entregar temprano antes de las 10',
+    cliente: { id: 10, alias: 'Ana QA', nombre_completo: 'Ana QA', email: null, mobile: null, direccion: null },
     tipo_pan: 'Bolla',
     ingrediente_adicional: 'Sin ingredientes adicionales',
   }], error: null } }));

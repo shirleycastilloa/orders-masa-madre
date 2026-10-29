@@ -71,7 +71,7 @@ function OrderCard({ order }: { order: Order }) {
     <div className="order-card-top"><div className="order-identity"><span className="order-alias">{order.cliente.alias}</span><span className="order-weekday">{formatWeekday(order.fecha_entrega)}</span></div><PaymentBadge paid={order.pagada} /></div>
     <div className="order-date-row"><span>{formatDate(order.fecha_entrega)}</span><strong>{formatTime(order.hora_entrega)}</strong></div>
     <div className="order-detail-row"><span>{order.tipo_pan}</span><span>{order.ingrediente_adicional}</span></div>
-    <div className="order-notes" title={order.cliente.notas ?? 'Sin notas'}><span className="muted-label">Notas:</span> {order.cliente.notas || 'Sin notas'}</div>
+    <div className="order-notes" title={order.notas ?? 'Sin notas'}><span className="muted-label">Notas:</span> {order.notas || 'Sin notas'}</div>
     <div className="order-card-bottom"><span className="muted-label">Monto a pagar</span><strong className="amount">{formatCurrency(order.monto_colones)}</strong></div>
     <span className="card-chevron" aria-hidden="true">›</span>
   </button>;
@@ -128,10 +128,9 @@ type ClientDraft = {
   email: string;
   mobile: string;
   direccion: string;
-  notas: string;
 };
 
-const emptyClientDraft: ClientDraft = { alias: '', nombre_completo: '', email: '', mobile: '', direccion: '', notas: '' };
+const emptyClientDraft: ClientDraft = { alias: '', nombre_completo: '', email: '', mobile: '', direccion: '' };
 
 function ClientMaintenancePage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -149,7 +148,7 @@ function ClientMaintenancePage() {
   useEffect(() => { void load(); }, []);
   function edit(client: Client) {
     setEditingId(client.id);
-    setDraft({ alias: client.alias, nombre_completo: client.nombre_completo ?? '', email: client.email ?? '', mobile: client.mobile ?? '', direccion: client.direccion ?? '', notas: client.notas ?? '' });
+    setDraft({ alias: client.alias, nombre_completo: client.nombre_completo ?? '', email: client.email ?? '', mobile: client.mobile ?? '', direccion: client.direccion ?? '' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function reset() { setEditingId(null); setDraft(emptyClientDraft); setError(null); }
@@ -164,7 +163,7 @@ function ClientMaintenancePage() {
   return <div className="page"><Header title="Clientes" onBack={() => navigate('/')} /><main className="page-content maintenance-page">
     <p className="maintenance-description">Administra los datos de tus clientes. El alias es obligatorio.</p>
     <form className="maintenance-form" onSubmit={save}><div className="maintenance-form-title">{editingId ? 'Editar cliente' : 'Agregar cliente'}</div>
-      <div className="form-grid two-columns"><label>Alias<input value={draft.alias} onChange={(event) => setDraft({ ...draft, alias: event.target.value })} required /></label><label>Nombre completo<input value={draft.nombre_completo} onChange={(event) => setDraft({ ...draft, nombre_completo: event.target.value })} /></label><label>Email<input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /></label><label>Mobile<input value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></label><label>Dirección<textarea value={draft.direccion} onChange={(event) => setDraft({ ...draft, direccion: event.target.value })} rows={2} /></label><label>Notas<textarea value={draft.notas} onChange={(event) => setDraft({ ...draft, notas: event.target.value })} rows={2} /></label></div>
+      <div className="form-grid two-columns"><label>Alias<input value={draft.alias} onChange={(event) => setDraft({ ...draft, alias: event.target.value })} required /></label><label>Nombre completo<input value={draft.nombre_completo} onChange={(event) => setDraft({ ...draft, nombre_completo: event.target.value })} /></label><label>Email<input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /></label><label>Mobile<input value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></label><label>Dirección<textarea value={draft.direccion} onChange={(event) => setDraft({ ...draft, direccion: event.target.value })} rows={2} /></label></div>
       <ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Limpiar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Agregar cliente'}</button></div>
     </form>
     <div className="maintenance-list-heading"><h2>Clientes registrados</h2><input aria-label="Buscar clientes" placeholder="Buscar…" value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void load(); } }} /></div>
@@ -193,26 +192,25 @@ function CatalogMaintenancePage({ kind }: { kind: 'panes' | 'ingredientes' }) {
   </main></div>;
 }
 
-type OrderFormValues = { cliente_id: string; fecha_entrega: string; hora_entrega: string; tipo_pan_id: string; ingrediente_adicional_id: string; monto_colones: string; pagada: boolean };
+type OrderFormValues = { cliente_id: string; fecha_entrega: string; hora_entrega: string; tipo_pan_id: string; ingrediente_adicional_id: string; notas: string; monto_colones: string; pagada: boolean };
 
 function initialForm(order?: Order): OrderFormValues {
-  return order ? { cliente_id: String(order.cliente_id), fecha_entrega: order.fecha_entrega, hora_entrega: order.hora_entrega, tipo_pan_id: String(order.tipo_pan_id), ingrediente_adicional_id: String(order.ingrediente_adicional_id), monto_colones: formatAmountInput(String(order.monto_colones)), pagada: order.pagada } : { cliente_id: '', fecha_entrega: today(), hora_entrega: '09:00', tipo_pan_id: '', ingrediente_adicional_id: '', monto_colones: '', pagada: false };
+  return order ? { cliente_id: String(order.cliente_id), fecha_entrega: order.fecha_entrega, hora_entrega: order.hora_entrega, tipo_pan_id: String(order.tipo_pan_id), ingrediente_adicional_id: String(order.ingrediente_adicional_id), notas: order.notas ?? '', monto_colones: formatAmountInput(String(order.monto_colones)), pagada: order.pagada } : { cliente_id: '', fecha_entrega: today(), hora_entrega: '09:00', tipo_pan_id: '', ingrediente_adicional_id: '', notas: '', monto_colones: '', pagada: false };
 }
 
 function InlineClientForm({ onCreated }: { onCreated: (client: Client) => void }) {
   const [alias, setAlias] = useState('');
   const [name, setName] = useState('');
-  const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   async function submit() {
     if (!alias.trim()) { setError(new Error('El alias es obligatorio.')); return; }
     setSaving(true); setError(null);
-    try { const client = await api.createClient({ alias, nombre_completo: name, notas: notes }); onCreated(client); setAlias(''); setName(''); setNotes(''); } catch (submitError) { setError(submitError); } finally { setSaving(false); }
+    try { const client = await api.createClient({ alias, nombre_completo: name }); onCreated(client); setAlias(''); setName(''); } catch (submitError) { setError(submitError); } finally { setSaving(false); }
   }
   return <div className="inline-client-form">
     <div className="inline-form-heading"><strong>Nuevo cliente</strong><span>Solo el alias es obligatorio</span></div>
-    <div className="form-grid two-columns"><label>Alias<input value={alias} onChange={(event) => setAlias(event.target.value)} required /></label><label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} /></label><label>Notas<textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Notas del cliente" /></label></div>
+    <div className="form-grid two-columns"><label>Alias<input value={alias} onChange={(event) => setAlias(event.target.value)} required /></label><label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} /></label></div>
     <ErrorMessage error={error} /><button type="button" className="button button-secondary button-small" onClick={() => void submit()} disabled={saving}>{saving ? 'Guardando…' : 'Crear cliente'}</button>
   </div>;
 }
@@ -230,11 +228,10 @@ function OrderFormPage({ order }: { order?: Order }) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   useEffect(() => { Promise.all([api.getCatalogs(), api.getClients()]).then(([catalogData, clientData]) => { setCatalogs(catalogData); setClients(clientData); }).catch(setError).finally(() => setLoading(false)); }, []);
   const filteredClients = clients.filter((client) => `${client.alias} ${client.nombre_completo ?? ''}`.toLowerCase().includes(clientSearch.toLowerCase()));
-  const selectedClient = clients.find((client) => String(client.id) === values.cliente_id);
   const update = (key: keyof OrderFormValues, value: string | boolean) => setValues((current) => ({ ...current, [key]: value }));
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setError(null); setFieldErrors({});
-    const body = { cliente_id: Number(values.cliente_id), fecha_entrega: values.fecha_entrega, hora_entrega: values.hora_entrega, tipo_pan_id: Number(values.tipo_pan_id), ingrediente_adicional_id: Number(values.ingrediente_adicional_id), monto_colones: parseAmount(values.monto_colones), pagada: values.pagada };
+    const body = { cliente_id: Number(values.cliente_id), fecha_entrega: values.fecha_entrega, hora_entrega: values.hora_entrega, tipo_pan_id: Number(values.tipo_pan_id), ingrediente_adicional_id: Number(values.ingrediente_adicional_id), notas: values.notas, monto_colones: parseAmount(values.monto_colones), pagada: values.pagada };
     try { const saved = editing ? await api.updateOrder(order!.id, body) : await api.createOrder(body); navigate(`/ordenes/${saved.id}`); } catch (submitError) { setError(submitError); if (submitError instanceof ApiClientError && submitError.fields) setFieldErrors(submitError.fields); } finally { setSaving(false); }
   }
   function handleClientCreated(client: Client) { setClients((current) => [...current, client].sort((a, b) => a.alias.localeCompare(b.alias))); update('cliente_id', String(client.id)); setShowNewClient(false); }
@@ -246,9 +243,9 @@ function OrderFormPage({ order }: { order?: Order }) {
       <label>Cliente<select value={values.cliente_id} onChange={(event) => update('cliente_id', event.target.value)} required><option value="">Selecciona un cliente</option>{filteredClients.map((client) => <option key={client.id} value={client.id}>{client.alias}{client.nombre_completo ? ` — ${client.nombre_completo}` : ''}</option>)}</select></label>
       <div className="search-row"><input aria-label="Buscar cliente" placeholder="Buscar cliente…" value={clientSearch} onChange={(event) => setClientSearch(event.target.value)} /><button type="button" className="button button-secondary button-small" onClick={() => setShowNewClient((current) => !current)}>{showNewClient ? 'Cerrar' : '+ Nuevo'}</button></div>
       {showNewClient ? <InlineClientForm onCreated={handleClientCreated} /> : null}
-      {selectedClient ? <label className="selected-client-notes">Notas del cliente<textarea value={selectedClient.notas ?? ''} readOnly rows={2} placeholder="Sin notas registradas" /><small className="field-hint">Puedes editarlas desde Mantenimientos &gt; Clientes.</small></label> : null}
       <div className="form-grid two-columns"><label>Fecha de entrega<input type="date" value={values.fecha_entrega} onChange={(event) => update('fecha_entrega', event.target.value)} required />{fieldErrors.fecha_entrega ? <small className="field-error">{fieldErrors.fecha_entrega}</small> : null}</label><label>Hora de entrega<input type="time" value={values.hora_entrega} onChange={(event) => update('hora_entrega', event.target.value)} required /><small className="field-hint">Se mostrará en formato am/pm</small></label></div>
       <div className="form-grid two-columns"><label>Tipo de pan<select value={values.tipo_pan_id} onChange={(event) => update('tipo_pan_id', event.target.value)} required><option value="">Selecciona</option>{catalogs.tipos_pan.map((item) => <option key={item.id} value={item.id}>{item.tipo}</option>)}</select></label><label>Ingredientes adicionales<select value={values.ingrediente_adicional_id} onChange={(event) => update('ingrediente_adicional_id', event.target.value)} required><option value="">Selecciona</option>{catalogs.ingredientes_adicionales.map((item) => <option key={item.id} value={item.id}>{item.ingrediente}</option>)}</select></label></div>
+      <label>Notas<textarea value={values.notas} onChange={(event) => update('notas', event.target.value)} rows={3} placeholder="Notas específicas de esta orden" /></label>
       <label>Monto a pagar<input inputMode="numeric" value={values.monto_colones} onChange={(event) => update('monto_colones', formatAmountInput(event.target.value))} placeholder="0" required /><small className="field-hint">Colones, sin decimales</small></label>
       <label className="checkbox-row"><input type="checkbox" checked={values.pagada} onChange={(event) => update('pagada', event.target.checked)} /><span>¿Ya pagó?</span></label>
       <ErrorMessage error={error} />
@@ -270,7 +267,7 @@ function DetailPage({ id }: { id: number }) {
   if (!order) return <div className="page"><Header title="Orden no encontrada" onBack={() => navigate('/')} /><main className="page-content"><ErrorMessage error={error ?? new Error('La orden no existe.')} /></main></div>;
   return <div className="page"><Header title={`Orden #${order.id}`} onBack={() => navigate(order.activa ? '/' : '/historial')} /><main className="page-content detail-content">
     <div className="detail-status"><span className={`status-pill ${order.activa ? 'active' : 'completed'}`}>{order.activa ? 'Activa' : 'Completada'}</span><PaymentBadge paid={order.pagada} /></div>
-    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Notas del cliente</dt><dd>{order.cliente.notas || 'Sin notas'}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd>{order.pagada ? 'Pagada' : 'Pendiente'}</dd></div></dl></section>
+    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Notas</dt><dd>{order.notas || 'Sin notas'}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd>{order.pagada ? 'Pagada' : 'Pendiente'}</dd></div></dl></section>
     <ErrorMessage error={actionError} />
     <div className="detail-actions"><button className="button button-primary" onClick={() => navigate(`/ordenes/${order.id}/editar`)} disabled={actionLoading}>Editar orden</button>{order.activa ? <button className="button button-secondary" onClick={complete} disabled={actionLoading}>{actionLoading ? 'Procesando…' : 'Marcar completada'}</button> : null}<button className="button button-danger" onClick={remove} disabled={actionLoading}>Eliminar orden</button></div>
   </main></div>;

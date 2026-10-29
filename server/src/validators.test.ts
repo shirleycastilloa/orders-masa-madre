@@ -14,11 +14,13 @@ describe('business validators', () => {
       hora_entrega: '14:30',
       tipo_pan_id: '2',
       ingrediente_adicional_id: '1',
+      notas: 'Nota de prueba',
       monto_colones: '12500',
       pagada: false,
     });
     expect(order.cliente_id).toBe(1);
     expect(order.monto_colones).toBe(12500);
+    expect(order.notas).toBe('Nota de prueba');
   });
 
   it('rejects impossible calendar dates', () => {

@@ -24,7 +24,7 @@ La especificación se mantiene sincronizada con la implementación publicada:
 - Repositorio: https://github.com/shirleycastilloa/orders-masa-madre
 - Base remota: Turso, base `orders-masa-madre`, región `aws-us-east-1`.
 - Rama de despliegue: `main`.
-- Última funcionalidad implementada: mantenimientos de clientes, tipos de pan e ingredientes adicionales desde la pantalla principal.
+- Últimas funcionalidades implementadas: notas específicas por orden y mantenimientos de clientes, tipos de pan e ingredientes adicionales desde la pantalla principal.
 - Corrección aplicada: “Agregar un nuevo cliente” ahora funciona desde “Registrar orden”; se eliminó el formulario HTML anidado y el cliente creado queda seleccionado automáticamente.
 - Estado: etapas 0 a 7 completadas; pruebas unitarias, de integración y end-to-end ejecutadas correctamente; servicio desplegado y con `/api/health` operativo.
 
@@ -95,7 +95,6 @@ Render Free suspende un Web Service después de 15 minutos sin tráfico y el arr
 | email | texto | No | Si se captura, formato de correo válido |
 | mobile | texto | No | Texto para conservar +, espacios y ceros |
 | direccion | texto | No | Texto multilínea |
-| notas | texto | No | Texto multilínea |
 
 Reglas:
 
@@ -148,6 +147,7 @@ Sin ingredientes adicionales es un registro normal del catálogo, no un valor nu
 | hora_entrega | hora | Sí | Selector de hora; pantalla am/pm |
 | tipo_pan_id | entero | Sí | Debe existir en tipos_pan |
 | ingrediente_adicional_id | entero | Sí | Debe existir en ingredientes_adicionales |
+| notas | texto | No | Nota específica de esta orden; texto multilínea |
 | monto_colones | entero | Sí | Entero positivo o cero; sin decimales |
 | pagada | booleano | Sí | false por defecto |
 | activa | booleano | Sí | true al crear; no es campo editable visible |
@@ -174,8 +174,7 @@ CREATE TABLE IF NOT EXISTS clientes (
   nombre_completo TEXT,
   email TEXT,
   mobile TEXT,
-  direccion TEXT,
-  notas TEXT
+  direccion TEXT
 );
 
 CREATE TABLE IF NOT EXISTS tipos_pan (
@@ -196,6 +195,7 @@ CREATE TABLE IF NOT EXISTS ordenes (
   hora_entrega TEXT NOT NULL,
   tipo_pan_id INTEGER NOT NULL,
   ingrediente_adicional_id INTEGER NOT NULL,
+  notas TEXT,
   monto_colones INTEGER NOT NULL DEFAULT 0 CHECK (monto_colones >= 0),
   pagada INTEGER NOT NULL DEFAULT 0 CHECK (pagada IN (0, 1)),
   activa INTEGER NOT NULL DEFAULT 1 CHECK (activa IN (0, 1)),
@@ -223,6 +223,8 @@ Decisiones:
 - Las respuestas de API incluyen tanto IDs como nombres relacionados para permitir editar.
 
 El seed debe usar inserciones idempotentes y no crear clientes ni órdenes de ejemplo en producción.
+
+La migración `002_order_notes` agrega `ordenes.notas` a la base existente y la migración `003_remove_client_notes` elimina la columna antigua de clientes. El ejecutor de migraciones aplica automáticamente todos los archivos SQL pendientes en orden alfabético.
 
 ## 5. API REST
 
@@ -275,7 +277,7 @@ Formato de validación:
 - GET /api/ordenes/historico: solo activa=0, ordenadas por fecha_registro descendente.
 - GET /api/ordenes/:id: todos los datos de la orden y nombres relacionados.
 - POST /api/ordenes: crea, genera fecha_registro en servidor y fija activa=1.
-- PATCH /api/ordenes/:id: actualiza cliente, entrega, tipo, ingrediente, monto y pago.
+- PATCH /api/ordenes/:id: actualiza cliente, entrega, tipo, ingrediente, notas, monto y pago.
 - PATCH /api/ordenes/:id/completar: fija activa=0 y es idempotente.
 - DELETE /api/ordenes/:id: elimina físicamente y devuelve 204 o éxito equivalente.
 
@@ -331,7 +333,7 @@ Cada tarjeta muestra:
 - Hora en am/pm.
 - Tipo de pan.
 - Ingrediente adicional.
-- Notas del cliente antes del monto, en una sola línea con elipsis cuando exceden el ancho disponible.
+- Notas de la orden antes del monto, en una sola línea con elipsis cuando exceden el ancho disponible.
 - Monto con separador de miles y sin decimales.
 - Pagada o Pendiente con texto y color/icono.
 
@@ -355,13 +357,12 @@ Campos:
 3. Hora de entrega: selector de hora; presentación am/pm.
 4. Tipo de pan: selector.
 5. Ingredientes adicionales: selector.
-6. Monto a pagar: entrada controlada, con miles y sin decimales.
-7. ¿Ya pagó?: checkbox desmarcado por defecto.
-8. Fecha de registro: informativa y no editable; la define el servidor.
+6. Notas: texto opcional específico de esta orden.
+7. Monto a pagar: entrada controlada, con miles y sin decimales.
+8. ¿Ya pagó?: checkbox desmarcado por defecto.
+9. Fecha de registro: informativa y no editable; la define el servidor.
 
-La acción + Nuevo cliente abre un panel independiente dentro de la pantalla. El panel permite capturar alias, nombre completo y notas del cliente. No se anidan formularios HTML: el alta del cliente se ejecuta con su propia acción y, al completarse, el cliente recién creado se selecciona en la orden.
-
-Al seleccionar un cliente existente, el formulario muestra sus notas como información de solo lectura. Las notas pertenecen al cliente y se editan desde Mantenimientos > Clientes; no son un campo independiente de la orden.
+La acción + Nuevo cliente abre un panel independiente dentro de la pantalla. El panel permite capturar alias y nombre completo. No se anidan formularios HTML: el alta del cliente se ejecuta con su propia acción y, al completarse, el cliente recién creado se selecciona en la orden.
 
 Acciones:
 
@@ -378,6 +379,7 @@ Mostrar todos los campos:
 
 - ID.
 - Cliente y datos disponibles.
+- Notas específicas de la orden.
 - Fecha de registro.
 - Fecha y hora de entrega.
 - Tipo de pan.
@@ -419,7 +421,7 @@ El inicio incluye un panel superior de mantenimiento con tres accesos:
 - `/mantenimiento/panes`: alta, edición y eliminación de tipos de pan. El campo `tipo` es obligatorio y único.
 - `/mantenimiento/ingredientes`: alta, edición y eliminación de ingredientes adicionales. El campo `ingrediente` es obligatorio y único.
 
-Los mantenimientos son accesibles con botones grandes y táctiles desde móvil. Cada pantalla muestra estados de carga, vacío, error y confirmación. Los registros utilizados por órdenes no se eliminan para evitar romper referencias históricas; la interfaz muestra el error devuelto por la API.
+Los mantenimientos son accesibles con botones grandes y táctiles desde móvil. El formulario de clientes contiene alias, nombre completo, email, mobile y dirección; no contiene notas porque las notas pertenecen a las órdenes. Cada pantalla muestra estados de carga, vacío, error y confirmación. Los registros utilizados por órdenes no se eliminan para evitar romper referencias históricas; la interfaz muestra el error devuelto por la API.
 
 ## 7. Fechas, horas y montos
 

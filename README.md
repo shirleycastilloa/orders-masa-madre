@@ -9,7 +9,7 @@ La primera versión funcional está implementada, probada y publicada en Render:
 - Aplicación: [orders-masa-madre.onrender.com](https://orders-masa-madre.onrender.com)
 - Repositorio: [github.com/shirleycastilloa/orders-masa-madre](https://github.com/shirleycastilloa/orders-masa-madre)
 - Base de datos remota: Turso/libSQL
-- Última funcionalidad incorporada: mantenimientos de clientes, tipos de pan e ingredientes adicionales.
+- Últimas funcionalidades incorporadas: notas específicas por orden y mantenimientos de clientes, tipos de pan e ingredientes adicionales.
 
 La aplicación no tiene autenticación ni autorización por decisión de alcance. Cualquier persona que conozca la URL puede consultar y modificar la información.
 
@@ -19,7 +19,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Registro de órdenes con cliente, fecha, hora, tipo de pan, ingrediente adicional, monto en colones y estado de pago.
 - Edición, eliminación física y marcado de órdenes como completadas.
 - Histórico de órdenes agrupado por año/mes y ordenado por fecha de registro.
-- En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas del cliente antes del monto, con truncamiento visual en una línea.
+- En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas de la orden antes del monto, con truncamiento visual en una línea.
 - Mantenimiento de clientes desde la parte superior de la pantalla principal: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
@@ -27,7 +27,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Validación en frontend y backend.
 - Health check disponible en `/api/health`.
 
-La acción “Agregar un nuevo cliente” dentro de “Registrar orden” funciona mediante un panel independiente que permite capturar alias, nombre y notas. Al seleccionar un cliente existente, sus notas se muestran en el registro de la orden como información de solo lectura; se editan desde Mantenimientos > Clientes. Se corrigió el problema de formularios HTML anidados que impedía enviar correctamente el alta del cliente; después de crearlo, queda seleccionado automáticamente en la orden.
+La acción “Agregar un nuevo cliente” dentro de “Registrar orden” funciona mediante un panel independiente que permite capturar alias y nombre. El formulario de la orden incluye un campo de notas específico para esa orden. Se corrigió el problema de formularios HTML anidados que impedía enviar correctamente el alta del cliente; después de crearlo, queda seleccionado automáticamente en la orden.
 
 ## Stack
 
@@ -82,7 +82,7 @@ Base remota configurada para la aplicación:
 - Región: `aws-us-east-1`
 - URL: `libsql://orders-masa-madre-shirleycastilloa.aws-us-east-1.turso.io`
 
-Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes` y el control de migraciones. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
+Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes` y el control de migraciones. Las migraciones posteriores agregan `ordenes.notas` y eliminan la columna antigua de notas de clientes. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
 
 ## API principal
 
@@ -153,6 +153,7 @@ La suite end-to-end cubre el alta de una orden, el alta rápida de cliente y la 
 | 6. Pruebas | Unitarias, integración y Playwright | `7847528` |
 | 7. Render | Blueprint, health check y despliegue desde GitHub | `c98cc2a` |
 | Actualización posterior | CRUD de clientes y catálogos; corrección de nuevo cliente | `39075a0` |
+| Actualización posterior | Notas específicas por orden y migraciones 002/003 | Versión `0.1.1` |
 
 El detalle funcional y técnico está en [`ESPECIFICACION-SISTEMA-ORDENES.md`](ESPECIFICACION-SISTEMA-ORDENES.md). El historial resumido de cambios está en [`CHANGELOG.md`](CHANGELOG.md).
 

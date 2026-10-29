@@ -18,6 +18,13 @@ Primera versión funcional publicada en Render.
 - Se agregaron accesos superiores en la pantalla principal para clientes, tipos de pan e ingredientes adicionales.
 - Se verificó la aplicación publicada, el health check y los endpoints principales en producción.
 
+## Versión 0.1.1 — Notas por orden
+
+- Las notas pasan del cliente a la orden mediante las migraciones `002_order_notes` y `003_remove_client_notes`.
+- El registro y edición de órdenes incluyen el campo Notas.
+- Las tarjetas activas, el histórico y el detalle muestran las notas específicas de cada orden.
+- Los formularios de clientes dejan de capturar notas.
+
 ## Historial de commits por etapa
 
 - `47f31a7` — estructura inicial, scripts y documentación base.
