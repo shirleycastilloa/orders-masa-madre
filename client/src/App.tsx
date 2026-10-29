@@ -2,12 +2,15 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api, ApiClientError, Catalogs, Client, Order } from './lib/api';
 import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, parseAmount } from './lib/format';
 
-type Route = { page: 'home' | 'new' | 'detail' | 'history'; id?: number };
+type MaintenanceKind = 'clientes' | 'panes' | 'ingredientes';
+type Route = { page: 'home' | 'new' | 'detail' | 'history' | 'maintenance'; id?: number; kind?: MaintenanceKind };
 
 function readRoute(): Route {
   const value = window.location.hash.replace(/^#/, '') || '/';
   if (value === '/historial') return { page: 'history' };
   if (value === '/ordenes/nueva') return { page: 'new' };
+  const maintenance = value.match(/^\/mantenimiento\/(clientes|panes|ingredientes)$/);
+  if (maintenance) return { page: 'maintenance', kind: maintenance[1] as MaintenanceKind };
   const detail = value.match(/^\/ordenes\/(\d+)(?:\/editar)?$/);
   if (detail) return { page: 'detail', id: Number(detail[1]) };
   return { page: 'home' };
@@ -48,6 +51,17 @@ function TopActions() {
   </div>;
 }
 
+function MaintenanceActions() {
+  return <section className="maintenance-panel" aria-labelledby="maintenance-title">
+    <div className="maintenance-heading"><h2 id="maintenance-title">Mantenimientos</h2><span>Catálogos y clientes</span></div>
+    <div className="maintenance-actions">
+      <button className="maintenance-button" onClick={() => navigate('/mantenimiento/clientes')}><span className="maintenance-icon">♙</span><span>Clientes</span><span aria-hidden="true">›</span></button>
+      <button className="maintenance-button" onClick={() => navigate('/mantenimiento/panes')}><span className="maintenance-icon">▣</span><span>Tipos de pan</span><span aria-hidden="true">›</span></button>
+      <button className="maintenance-button" onClick={() => navigate('/mantenimiento/ingredientes')}><span className="maintenance-icon">✦</span><span>Ingredientes</span><span aria-hidden="true">›</span></button>
+    </div>
+  </section>;
+}
+
 function PaymentBadge({ paid }: { paid: boolean }) {
   return <span className={`payment-badge ${paid ? 'is-paid' : 'is-pending'}`}><span aria-hidden="true">{paid ? '✓' : '○'}</span>{paid ? 'Pagada' : 'Pendiente'}</span>;
 }
@@ -79,7 +93,7 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   useEffect(() => { api.getActiveOrders().then(setOrders).catch(setError).finally(() => setLoading(false)); }, []);
-  return <div className="page"><Header /><TopActions /><main className="page-content">
+  return <div className="page"><Header /><TopActions /><main className="page-content"><MaintenanceActions />
     {loading ? <Loading /> : <ErrorMessage error={error} />}
     {!loading && !error && orders.length === 0 ? <div className="empty-state"><div className="empty-icon">✦</div><h2>No hay órdenes activas</h2><p>Registra la primera orden para comenzar a organizar tus entregas.</p><button className="button button-primary" onClick={() => navigate('/ordenes/nueva')}>Registrar orden</button></div> : null}
     {!loading && !error && orders.length > 0 ? <GroupedOrders orders={orders} /> : null}
@@ -107,6 +121,77 @@ function HistoryPage() {
   </main></div>;
 }
 
+type ClientDraft = {
+  alias: string;
+  nombre_completo: string;
+  email: string;
+  mobile: string;
+  direccion: string;
+  notas: string;
+};
+
+const emptyClientDraft: ClientDraft = { alias: '', nombre_completo: '', email: '', mobile: '', direccion: '', notas: '' };
+
+function ClientMaintenancePage() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [draft, setDraft] = useState<ClientDraft>(emptyClientDraft);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+
+  async function load() {
+    setLoading(true);
+    try { setClients(await api.getClients(search)); } catch (loadError) { setError(loadError); } finally { setLoading(false); }
+  }
+  useEffect(() => { void load(); }, []);
+  function edit(client: Client) {
+    setEditingId(client.id);
+    setDraft({ alias: client.alias, nombre_completo: client.nombre_completo ?? '', email: client.email ?? '', mobile: client.mobile ?? '', direccion: client.direccion ?? '', notas: client.notas ?? '' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function reset() { setEditingId(null); setDraft(emptyClientDraft); setError(null); }
+  async function save(event: FormEvent) {
+    event.preventDefault(); setSaving(true); setError(null);
+    try { if (editingId) await api.updateClient(editingId, draft); else await api.createClient(draft); reset(); await load(); } catch (saveError) { setError(saveError); } finally { setSaving(false); }
+  }
+  async function remove(client: Client) {
+    if (!window.confirm(`¿Eliminar el cliente ${client.alias}? Solo se puede eliminar si no tiene órdenes.`)) return;
+    try { await api.deleteClient(client.id); if (editingId === client.id) reset(); await load(); } catch (removeError) { setError(removeError); }
+  }
+  return <div className="page"><Header title="Clientes" onBack={() => navigate('/')} /><main className="page-content maintenance-page">
+    <p className="maintenance-description">Administra los datos de tus clientes. El alias es obligatorio.</p>
+    <form className="maintenance-form" onSubmit={save}><div className="maintenance-form-title">{editingId ? 'Editar cliente' : 'Agregar cliente'}</div>
+      <div className="form-grid two-columns"><label>Alias<input value={draft.alias} onChange={(event) => setDraft({ ...draft, alias: event.target.value })} required /></label><label>Nombre completo<input value={draft.nombre_completo} onChange={(event) => setDraft({ ...draft, nombre_completo: event.target.value })} /></label><label>Email<input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} /></label><label>Mobile<input value={draft.mobile} onChange={(event) => setDraft({ ...draft, mobile: event.target.value })} /></label><label>Dirección<textarea value={draft.direccion} onChange={(event) => setDraft({ ...draft, direccion: event.target.value })} rows={2} /></label><label>Notas<textarea value={draft.notas} onChange={(event) => setDraft({ ...draft, notas: event.target.value })} rows={2} /></label></div>
+      <ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Limpiar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Agregar cliente'}</button></div>
+    </form>
+    <div className="maintenance-list-heading"><h2>Clientes registrados</h2><input aria-label="Buscar clientes" placeholder="Buscar…" value={search} onChange={(event) => setSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void load(); } }} /></div>
+    {loading ? <Loading /> : clients.length === 0 ? <div className="empty-state compact"><h2>No hay clientes</h2><p>Agrega un cliente para utilizarlo en una orden.</p></div> : <div className="maintenance-list">{clients.map((client) => <div className="maintenance-row" key={client.id}><div><strong>{client.alias}</strong><span>{client.nombre_completo || client.email || 'Sin datos adicionales'}</span></div><div className="row-actions"><button className="button button-secondary button-small" onClick={() => edit(client)}>Editar</button><button className="button button-danger button-small" onClick={() => void remove(client)}>Eliminar</button></div></div>)}</div>}
+  </main></div>;
+}
+
+function CatalogMaintenancePage({ kind }: { kind: 'panes' | 'ingredientes' }) {
+  const [catalogs, setCatalogs] = useState<Catalogs | null>(null);
+  const [value, setValue] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+  const isBread = kind === 'panes';
+  const title = isBread ? 'Tipos de pan' : 'Ingredientes adicionales';
+  const items = isBread ? catalogs?.tipos_pan.map((item) => ({ id: item.id, label: item.tipo })) ?? [] : catalogs?.ingredientes_adicionales.map((item) => ({ id: item.id, label: item.ingrediente })) ?? [];
+  async function load() { setLoading(true); try { setCatalogs(await api.getCatalogs()); } catch (loadError) { setError(loadError); } finally { setLoading(false); } }
+  useEffect(() => { void load(); }, []);
+  function reset() { setValue(''); setEditingId(null); setError(null); }
+  async function save(event: FormEvent) { event.preventDefault(); if (!value.trim()) return; setSaving(true); setError(null); try { if (isBread) { if (editingId) await api.updateBreadType(editingId, value); else await api.createBreadType(value); } else if (editingId) await api.updateIngredient(editingId, value); else await api.createIngredient(value); reset(); await load(); } catch (saveError) { setError(saveError); } finally { setSaving(false); } }
+  async function remove(item: { id: number; label: string }) { if (!window.confirm(`¿Eliminar “${item.label}”?`)) return; try { if (isBread) await api.deleteBreadType(item.id); else await api.deleteIngredient(item.id); await load(); } catch (removeError) { setError(removeError); } }
+  return <div className="page"><Header title={title} onBack={() => navigate('/')} /><main className="page-content maintenance-page"><p className="maintenance-description">Crea, edita o elimina opciones disponibles al registrar una orden.</p>
+    <form className="maintenance-form compact-form" onSubmit={save}><div className="maintenance-form-title">{editingId ? 'Editar opción' : 'Agregar opción'}</div><label>{isBread ? 'Tipo de pan' : 'Ingrediente'}<input value={value} onChange={(event) => setValue(event.target.value)} required /></label><ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Limpiar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Agregar'}</button></div></form>
+    <div className="maintenance-list-heading"><h2>Opciones registradas</h2></div>{loading ? <Loading /> : <div className="maintenance-list">{items.map((item) => <div className="maintenance-row" key={item.id}><strong>{item.label}</strong><div className="row-actions"><button className="button button-secondary button-small" onClick={() => { setEditingId(item.id); setValue(item.label); }}>Editar</button><button className="button button-danger button-small" onClick={() => void remove(item)}>Eliminar</button></div></div>)}</div>}
+  </main></div>;
+}
+
 type OrderFormValues = { cliente_id: string; fecha_entrega: string; hora_entrega: string; tipo_pan_id: string; ingrediente_adicional_id: string; monto_colones: string; pagada: boolean };
 
 function initialForm(order?: Order): OrderFormValues {
@@ -118,15 +203,16 @@ function InlineClientForm({ onCreated }: { onCreated: (client: Client) => void }
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
-  async function submit(event: FormEvent) {
-    event.preventDefault(); setSaving(true); setError(null);
+  async function submit() {
+    if (!alias.trim()) { setError(new Error('El alias es obligatorio.')); return; }
+    setSaving(true); setError(null);
     try { const client = await api.createClient({ alias, nombre_completo: name }); onCreated(client); setAlias(''); setName(''); } catch (submitError) { setError(submitError); } finally { setSaving(false); }
   }
-  return <form className="inline-client-form" onSubmit={submit}>
+  return <div className="inline-client-form">
     <div className="inline-form-heading"><strong>Nuevo cliente</strong><span>Solo el alias es obligatorio</span></div>
     <div className="form-grid two-columns"><label>Alias<input value={alias} onChange={(event) => setAlias(event.target.value)} required /></label><label>Nombre completo<input value={name} onChange={(event) => setName(event.target.value)} /></label></div>
-    <ErrorMessage error={error} /><button className="button button-secondary button-small" disabled={saving}>{saving ? 'Guardando…' : 'Crear cliente'}</button>
-  </form>;
+    <ErrorMessage error={error} /><button type="button" className="button button-secondary button-small" onClick={() => void submit()} disabled={saving}>{saving ? 'Guardando…' : 'Crear cliente'}</button>
+  </div>;
 }
 
 function OrderFormPage({ order }: { order?: Order }) {
@@ -201,6 +287,8 @@ function App() {
   if (route.page === 'home') return <HomePage />;
   if (route.page === 'history') return <HistoryPage />;
   if (route.page === 'new') return <OrderFormPage />;
+  if (route.page === 'maintenance' && route.kind === 'clientes') return <ClientMaintenancePage />;
+  if (route.page === 'maintenance' && (route.kind === 'panes' || route.kind === 'ingredientes')) return <CatalogMaintenancePage kind={route.kind} />;
   if (route.page === 'detail' && route.id) return window.location.hash.endsWith('/editar') ? <EditOrderPage id={route.id} /> : <DetailPage id={route.id} />;
   return <HomePage />;
 }

@@ -13,6 +13,8 @@ export type Catalogs = {
   ingredientes_adicionales: Array<{ id: number; ingrediente: string }>;
 };
 
+export type CatalogItem = { id: number; tipo?: string; ingrediente?: string };
+
 export type Order = {
   id: number;
   cliente_id: number;
@@ -57,6 +59,14 @@ export const api = {
   getCatalogs: () => request<Catalogs>('/catalogos'),
   getClients: (search = '') => request<Client[]>(`/clientes${search ? `?search=${encodeURIComponent(search)}` : ''}`),
   createClient: (body: Partial<Client> & { alias: string }) => request<Client>('/clientes', { method: 'POST', body: JSON.stringify(body) }),
+  updateClient: (id: number, body: Partial<Client>) => request<Client>(`/clientes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+  deleteClient: (id: number) => request<null>(`/clientes/${id}`, { method: 'DELETE' }),
+  createBreadType: (tipo: string) => request<CatalogItem>('/catalogos/tipos-pan', { method: 'POST', body: JSON.stringify({ tipo }) }),
+  updateBreadType: (id: number, tipo: string) => request<CatalogItem>(`/catalogos/tipos-pan/${id}`, { method: 'PATCH', body: JSON.stringify({ tipo }) }),
+  deleteBreadType: (id: number) => request<null>(`/catalogos/tipos-pan/${id}`, { method: 'DELETE' }),
+  createIngredient: (ingrediente: string) => request<CatalogItem>('/catalogos/ingredientes', { method: 'POST', body: JSON.stringify({ ingrediente }) }),
+  updateIngredient: (id: number, ingrediente: string) => request<CatalogItem>(`/catalogos/ingredientes/${id}`, { method: 'PATCH', body: JSON.stringify({ ingrediente }) }),
+  deleteIngredient: (id: number) => request<null>(`/catalogos/ingredientes/${id}`, { method: 'DELETE' }),
   getActiveOrders: () => request<Order[]>('/ordenes/activas'),
   getHistoryOrders: () => request<Order[]>('/ordenes/historico'),
   getOrder: (id: number) => request<Order>(`/ordenes/${id}`),

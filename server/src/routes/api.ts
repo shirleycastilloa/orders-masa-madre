@@ -5,7 +5,11 @@ import { ApiError, sendData } from '../http.js';
 import {
   clientCreateSchema,
   clientUpdateSchema,
+  breadTypeCreateSchema,
+  breadTypeUpdateSchema,
   getNumericId,
+  ingredientCreateSchema,
+  ingredientUpdateSchema,
   isValidDateOnly,
   normalizeOptionalText,
   orderCreateSchema,
@@ -125,6 +129,76 @@ apiRouter.get('/catalogos', async (_request, response) => {
   });
 });
 
+async function saveCatalogItem(table: 'tipos_pan' | 'ingredientes_adicionales', column: 'tipo' | 'ingrediente', value: string) {
+  try {
+    const result = await db.execute({ sql: `INSERT INTO ${table} (${column}) VALUES (?)`, args: [value] });
+    return Number(result.lastInsertRowid);
+  } catch (error) {
+    if (String(error).toLowerCase().includes('unique')) {
+      throw new ApiError(409, 'DUPLICATE_CATALOG_ITEM', 'Ya existe un elemento con ese nombre.');
+    }
+    throw error;
+  }
+}
+
+apiRouter.post('/catalogos/tipos-pan', async (request, response) => {
+  const data = breadTypeCreateSchema.parse(request.body);
+  const id = await saveCatalogItem('tipos_pan', 'tipo', data.tipo);
+  return sendData(response, { id, tipo: data.tipo }, 201);
+});
+
+apiRouter.patch('/catalogos/tipos-pan/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const data = breadTypeUpdateSchema.parse(request.body);
+  try {
+    const result = await db.execute({ sql: 'UPDATE tipos_pan SET tipo = ? WHERE id = ?', args: [data.tipo!, id] });
+    if (result.rowsAffected === 0) throw new ApiError(404, 'BREAD_TYPE_NOT_FOUND', 'Tipo de pan no encontrado.');
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (String(error).toLowerCase().includes('unique')) throw new ApiError(409, 'DUPLICATE_CATALOG_ITEM', 'Ya existe un elemento con ese nombre.');
+    throw error;
+  }
+  return sendData(response, { id, tipo: data.tipo! });
+});
+
+apiRouter.delete('/catalogos/tipos-pan/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const used = await db.execute({ sql: 'SELECT 1 FROM ordenes WHERE tipo_pan_id = ? LIMIT 1', args: [id] });
+  if (used.rows.length > 0) throw new ApiError(409, 'CATALOG_ITEM_IN_USE', 'No se puede eliminar un tipo utilizado por una orden.');
+  const result = await db.execute({ sql: 'DELETE FROM tipos_pan WHERE id = ?', args: [id] });
+  if (result.rowsAffected === 0) throw new ApiError(404, 'BREAD_TYPE_NOT_FOUND', 'Tipo de pan no encontrado.');
+  return response.status(204).send();
+});
+
+apiRouter.post('/catalogos/ingredientes', async (request, response) => {
+  const data = ingredientCreateSchema.parse(request.body);
+  const id = await saveCatalogItem('ingredientes_adicionales', 'ingrediente', data.ingrediente);
+  return sendData(response, { id, ingrediente: data.ingrediente }, 201);
+});
+
+apiRouter.patch('/catalogos/ingredientes/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const data = ingredientUpdateSchema.parse(request.body);
+  try {
+    const result = await db.execute({ sql: 'UPDATE ingredientes_adicionales SET ingrediente = ? WHERE id = ?', args: [data.ingrediente!, id] });
+    if (result.rowsAffected === 0) throw new ApiError(404, 'INGREDIENT_NOT_FOUND', 'Ingrediente no encontrado.');
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (String(error).toLowerCase().includes('unique')) throw new ApiError(409, 'DUPLICATE_CATALOG_ITEM', 'Ya existe un elemento con ese nombre.');
+    throw error;
+  }
+  return sendData(response, { id, ingrediente: data.ingrediente! });
+});
+
+apiRouter.delete('/catalogos/ingredientes/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const used = await db.execute({ sql: 'SELECT 1 FROM ordenes WHERE ingrediente_adicional_id = ? LIMIT 1', args: [id] });
+  if (used.rows.length > 0) throw new ApiError(409, 'CATALOG_ITEM_IN_USE', 'No se puede eliminar un ingrediente utilizado por una orden.');
+  const result = await db.execute({ sql: 'DELETE FROM ingredientes_adicionales WHERE id = ?', args: [id] });
+  if (result.rowsAffected === 0) throw new ApiError(404, 'INGREDIENT_NOT_FOUND', 'Ingrediente no encontrado.');
+  return response.status(204).send();
+});
+
 apiRouter.get('/clientes', async (request, response) => {
   const search = typeof request.query.search === 'string' ? request.query.search.trim() : '';
   const result = search
@@ -213,6 +287,15 @@ apiRouter.patch('/clientes/:id', async (request, response) => {
     args: [id],
   });
   return sendData(response, mapClient(updated.rows[0] as Record<string, unknown>));
+});
+
+apiRouter.delete('/clientes/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const used = await db.execute({ sql: 'SELECT 1 FROM ordenes WHERE cliente_id = ? LIMIT 1', args: [id] });
+  if (used.rows.length > 0) throw new ApiError(409, 'CLIENT_IN_USE', 'No se puede eliminar un cliente con órdenes relacionadas.');
+  const result = await db.execute({ sql: 'DELETE FROM clientes WHERE id = ?', args: [id] });
+  if (result.rowsAffected === 0) throw new ApiError(404, 'CLIENT_NOT_FOUND', 'Cliente no encontrado.');
+  return response.status(204).send();
 });
 
 async function listOrders(active: boolean) {

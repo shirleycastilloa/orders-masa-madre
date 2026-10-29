@@ -26,6 +26,15 @@ export const clientUpdateSchema = clientCreateSchema.partial().refine((data) => 
   message: 'Debes enviar al menos un campo para actualizar.',
 });
 
+export const breadTypeCreateSchema = z.object({ tipo: z.string().trim().min(1, 'El tipo es obligatorio.') }).strict();
+export const breadTypeUpdateSchema = breadTypeCreateSchema.partial().refine((data) => Object.keys(data).length > 0, {
+  message: 'Debes enviar al menos un campo para actualizar.',
+});
+export const ingredientCreateSchema = z.object({ ingrediente: z.string().trim().min(1, 'El ingrediente es obligatorio.') }).strict();
+export const ingredientUpdateSchema = ingredientCreateSchema.partial().refine((data) => Object.keys(data).length > 0, {
+  message: 'Debes enviar al menos un campo para actualizar.',
+});
+
 export const orderCreateSchema = z
   .object({
     cliente_id: idSchema,
