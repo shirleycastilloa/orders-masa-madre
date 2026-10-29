@@ -25,6 +25,4 @@ app.get('*splat', (_request, response) => {
 
 app.use(errorHandler);
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Orders Masa Madre server listening on port ${port}`);
-});
+export default app;

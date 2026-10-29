@@ -62,3 +62,14 @@ npm run db:status
 ```
 
 La migración `001_initial` crea clientes, tipos de pan, ingredientes adicionales, órdenes, índices y la tabla de control de migraciones. El seed es idempotente y carga Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
+
+## Pruebas
+
+```powershell
+npm test
+npm run test:e2e
+npm run lint
+npm run build
+```
+
+La prueba de integración de API se ejecuta cuando existen `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN`; crea datos temporales en Turso y los elimina al finalizar.

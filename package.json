@@ -16,10 +16,12 @@
     "db:migrate": "npm run db:migrate --workspace=server",
     "db:seed": "npm run db:seed --workspace=server",
     "db:status": "npm run db:status --workspace=server",
+    "test:e2e": "playwright test",
     "lint": "npm run lint --workspace=client && npm run lint --workspace=server && npm run lint --workspace=shared",
     "test": "npm run test --workspace=client && npm run test --workspace=server && npm run test --workspace=shared"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "concurrently": "^9.2.1"
   }
 }

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { api, ApiClientError, Catalogs, Client, Order } from './lib/api';
+import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, parseAmount } from './lib/format';
 
 type Route = { page: 'home' | 'new' | 'detail' | 'history'; id?: number };
 
@@ -16,37 +17,9 @@ function navigate(path: string) {
   window.location.hash = path;
 }
 
-function formatCurrency(value: number) {
-  return `₡${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)}`;
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('es-GT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
-}
-
-function formatMonth(value: string) {
-  const label = new Intl.DateTimeFormat('es-GT', { month: 'long', year: 'numeric' }).format(new Date(`${value}T00:00:00`));
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-function formatTime(value: string) {
-  const [hours, minutes] = value.split(':').map(Number);
-  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours >= 12 ? 'PM' : 'AM'}`;
-}
-
 function today() {
   const date = new Date();
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function formatAmountInput(value: string) {
-  const digits = value.replace(/\D/g, '');
-  return digits ? new Intl.NumberFormat('en-US').format(Number(digits)) : '';
-}
-
-function parseAmount(value: string) {
-  const digits = value.replace(/\D/g, '');
-  return digits ? Number(digits) : 0;
 }
 
 function ErrorMessage({ error }: { error: unknown }) {
