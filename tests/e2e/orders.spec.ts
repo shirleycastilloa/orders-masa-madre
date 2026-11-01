@@ -123,6 +123,8 @@ test('muestra el resumen de pagos de las órdenes activas', async ({ page }) => 
   await expect(summary).toBeVisible();
   await expect(summary.getByText('₡12,500')).toBeVisible();
   await expect(summary.getByText('₡8,000')).toBeVisible();
+  await expect(summary.locator('.summary-card.is-paid')).toHaveCSS('background-color', 'rgb(224, 240, 231)');
+  await expect(summary.locator('.summary-card.is-pending')).toHaveCSS('background-color', 'rgb(253, 227, 225)');
 });
 
 test('permite alternar el estado de pago desde el detalle', async ({ page }) => {
@@ -156,10 +158,15 @@ test('permite alternar el estado de pago desde el detalle', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Marcar completada' })).toHaveClass(/button-complete/);
   const paymentButton = page.getByRole('button', { name: 'Marcar Pagada' });
   await expect(paymentButton).toHaveClass(/is-pending/);
+  await expect(paymentButton).toHaveCSS('background-color', 'rgb(180, 35, 24)');
   await expect(page.getByText('Pendiente', { exact: true }).last()).toHaveClass(/is-pending/);
+  await expect(page.getByText('Pendiente', { exact: true }).last()).toHaveCSS('background-color', 'rgb(253, 227, 225)');
   await paymentButton.click();
-  await expect(page.getByRole('button', { name: 'Marcar Pendiente' })).toHaveClass(/is-paid/);
+  const paidButton = page.getByRole('button', { name: 'Marcar Pendiente' });
+  await expect(paidButton).toHaveClass(/is-paid/);
+  await expect(paidButton).toHaveCSS('background-color', 'rgb(34, 107, 78)');
   await expect(page.getByText('Pagada', { exact: true }).last()).toHaveClass(/is-paid/);
+  await expect(page.getByText('Pagada', { exact: true }).last()).toHaveCSS('background-color', 'rgb(224, 240, 231)');
   await page.getByRole('button', { name: 'Regresar' }).click();
   await expect(page).toHaveURL(/\/#\/$/);
   await expect(page.getByRole('heading', { name: 'Órdenes activas', exact: true })).toBeVisible();
