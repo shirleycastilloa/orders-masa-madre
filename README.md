@@ -18,9 +18,11 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Inicio con órdenes activas agrupadas por mes y año de entrega, ordenadas de la más cercana a la más lejana.
 - Registro de órdenes con cliente, fecha, hora, tipo de pan, ingrediente adicional, monto en colones y estado de pago.
 - Edición, eliminación física y marcado de órdenes como completadas.
-- Histórico de órdenes agrupado por año/mes y ordenado por fecha de registro.
+- Histórico de órdenes agrupado por año/mes y ordenado por fecha de registro ascendente.
+- Resumen de montos Pagados y Pendientes tanto para órdenes activas como históricas.
 - En cada tarjeta activa se muestra el día de entrega debajo del alias y las notas de la orden antes del monto, con truncamiento visual en una línea. Las notas con contenido se muestran en rojo; cuando no existen, se muestra “Sin notas” con formato normal.
-- Mantenimiento de clientes desde la parte superior de la pantalla principal: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
+- Menú responsive de mantenimientos: hamburguesa en móvil y navegación normal en pantallas mayores.
+- Mantenimiento de clientes: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
 - Selector de hora con presentación AM/PM y montos con separador de miles sin decimales.
@@ -82,7 +84,7 @@ Base remota configurada para la aplicación:
 - Región: `aws-us-east-1`
 - URL: `libsql://orders-masa-madre-shirleycastilloa.aws-us-east-1.turso.io`
 
-Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes` y el control de migraciones. Las migraciones posteriores agregan `ordenes.notas` y eliminan la columna antigua de notas de clientes. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
+Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes` y el control de migraciones. Las migraciones posteriores agregan `ordenes.notas`, eliminan la columna antigua de notas de clientes y cargan cuatro órdenes históricas de octubre de 2026 mediante `004_historical_orders_october_2026`. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
 
 ## API principal
 

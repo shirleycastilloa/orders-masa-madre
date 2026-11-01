@@ -12,12 +12,12 @@ La aplicación permitirá:
 - Capturar notas específicas para cada orden y mostrarlas en sus tarjetas y detalle.
 - Marcar una orden como completada, trasladándola de activas a históricas.
 - Mostrar las órdenes activas agrupadas por mes de entrega.
-- Consultar el histórico agrupado por año/mes y ordenado por fecha de registro.
+- Consultar el histórico agrupado por año/mes y ordenado por fecha de registro ascendente.
 - Persistir toda la información en una base de datos remota Turso.
 - Versionar el código en GitHub bajo el usuario shirleycastilloa.
 - Desplegar la aplicación en Render usando el plan gratuito.
 
-## Estado de implementación — actualizado 2026-10-29
+## Estado de implementación — actualizado 2026-10-31
 
 La especificación se mantiene sincronizada con la implementación publicada:
 
@@ -25,7 +25,7 @@ La especificación se mantiene sincronizada con la implementación publicada:
 - Repositorio: https://github.com/shirleycastilloa/orders-masa-madre
 - Base remota: Turso, base `orders-masa-madre`, región `aws-us-east-1`.
 - Rama de despliegue: `main`.
-- Últimas funcionalidades implementadas: notas específicas por orden y mantenimientos de clientes, tipos de pan e ingredientes adicionales desde la pantalla principal.
+- Últimas funcionalidades implementadas: notas específicas por orden, menú responsive de mantenimientos, resúmenes de pagos y carga de órdenes históricas de octubre de 2026.
 - Corrección aplicada: “Agregar un nuevo cliente” ahora funciona desde “Registrar orden”; se eliminó el formulario HTML anidado y el cliente creado queda seleccionado automáticamente.
 - Estado: etapas 0 a 7 completadas; pruebas unitarias, de integración y end-to-end ejecutadas correctamente; servicio desplegado y con `/api/health` operativo.
 
@@ -209,7 +209,7 @@ CREATE INDEX IF NOT EXISTS idx_ordenes_activas_entrega
   ON ordenes (activa, fecha_entrega, hora_entrega, id);
 
 CREATE INDEX IF NOT EXISTS idx_ordenes_historicas_registro
-  ON ordenes (activa, fecha_registro DESC, id DESC);
+  ON ordenes (activa, fecha_registro ASC, id ASC);
 
 CREATE INDEX IF NOT EXISTS idx_ordenes_cliente
   ON ordenes (cliente_id);
@@ -223,9 +223,9 @@ Decisiones:
 - Antes de borrar un catálogo se revisa si está utilizado.
 - Las respuestas de API incluyen tanto IDs como nombres relacionados para permitir editar.
 
-El seed debe usar inserciones idempotentes y no crear clientes ni órdenes de ejemplo en producción.
+El seed debe usar inserciones idempotentes y no crear clientes ni órdenes de ejemplo en producción. La migración `004_historical_orders_october_2026` es una carga explícita de cuatro órdenes históricas solicitadas y conserva clientes existentes mediante inserciones con conflicto ignorado.
 
-La migración `002_order_notes` agrega `ordenes.notas` a la base existente y la migración `003_remove_client_notes` elimina la columna antigua de clientes. El ejecutor de migraciones aplica automáticamente todos los archivos SQL pendientes en orden alfabético.
+La migración `002_order_notes` agrega `ordenes.notas` a la base existente, la migración `003_remove_client_notes` elimina la columna antigua de clientes y la migración `004_historical_orders_october_2026` agrega las órdenes históricas solicitadas. El ejecutor de migraciones aplica automáticamente todos los archivos SQL pendientes en orden alfabético.
 
 ## 5. API REST
 
@@ -275,7 +275,7 @@ Formato de validación:
 ### 5.3 Órdenes
 
 - GET /api/ordenes/activas: solo activa=1, ordenadas por fecha y hora de entrega ascendente.
-- GET /api/ordenes/historico: solo activa=0, ordenadas por fecha_registro descendente.
+- GET /api/ordenes/historico: solo activa=0, ordenadas por fecha_registro ascendente.
 - GET /api/ordenes/:id: todos los datos de la orden y nombres relacionados.
 - POST /api/ordenes: crea, genera fecha_registro en servidor y fija activa=1.
 - PATCH /api/ordenes/:id: actualiza cliente, entrega, tipo, ingrediente, notas, monto y pago.
@@ -407,7 +407,7 @@ Mostrar solo activa=false con esta jerarquía:
 ~~~text
 Año
   Mes
-    Órdenes ordenadas por fecha de registro descendente
+    Órdenes ordenadas por fecha de registro ascendente
 ~~~
 
 Cada tarjeta muestra los datos resumidos, fecha de registro y estado de pago. Debe poder abrirse para consultar o editar.
@@ -753,7 +753,7 @@ Validación posterior:
 
 - Solo activa=false.
 - Agrupado por año/mes.
-- Ordenado por fecha de registro descendente.
+- Ordenado por fecha de registro ascendente.
 - Tarjetas seleccionables.
 
 ### Operación

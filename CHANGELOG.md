@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## Versión 0.1.2 — 2026-10-31
+
+- El Histórico se ordena por fecha de registro ascendente.
+- Se agregaron resúmenes de montos Pagados y Pendientes para órdenes activas e históricas.
+- Se agregó el menú responsive de mantenimientos y el botón azul “Regresar”.
+- La migración `004_historical_orders_october_2026` agrega cuatro órdenes completadas de octubre de 2026, con sus clientes y catálogos faltantes sin duplicar registros existentes.
+
 ## Versión 0.1.0 — 2026-10-29
 
 Primera versión funcional publicada en Render.

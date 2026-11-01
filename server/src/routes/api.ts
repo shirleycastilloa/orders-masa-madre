@@ -300,7 +300,7 @@ async function listOrders(active: boolean) {
   const result = await db.execute({
     sql: `${orderProjection}
       WHERE o.activa = ?
-      ORDER BY ${active ? 'o.fecha_entrega ASC, o.hora_entrega ASC, o.id ASC' : 'o.fecha_registro DESC, o.id DESC'}`,
+      ORDER BY ${active ? 'o.fecha_entrega ASC, o.hora_entrega ASC, o.id ASC' : 'o.fecha_registro ASC, o.id ASC'}`,
     args: [active ? 1 : 0],
   });
   return result.rows.map((row) => mapOrder(row as Record<string, unknown>));
