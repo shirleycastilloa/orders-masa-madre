@@ -24,10 +24,14 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .icon-button { width: 44px; padding: 0; border: 0; border-radius: 50%; color: #7b3f26; background: #ead7c5; font-size: 1.5rem; }
 .top-actions { display: grid; grid-template-columns: 1.35fr 1fr; gap: .65rem; padding-bottom: 1.2rem; }
 .maintenance-panel { margin-bottom: 1.4rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: rgb(255 253 249 / 82%); }
-.maintenance-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.maintenance-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
+.maintenance-title { display: grid; gap: .2rem; }
 .maintenance-heading h2 { margin: 0; color: #674f43; font-size: 1rem; }
-.maintenance-heading span { color: #8c7568; font-size: .75rem; }
-.maintenance-actions { display: grid; gap: .5rem; }
+.maintenance-title > span { color: #8c7568; font-size: .75rem; }
+.maintenance-menu-toggle { display: inline-flex; align-items: center; gap: .4rem; min-height: 40px; padding: .45rem .65rem; border: 1px solid #d8bda6; border-radius: .65rem; color: #7b3f26; background: #fffdf9; font-weight: 750; }
+.maintenance-menu-glyph { font-size: 1.2rem; line-height: 1; }
+.maintenance-actions { display: none; gap: .5rem; }
+.maintenance-panel.is-open .maintenance-actions { display: grid; }
 .maintenance-button { display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: .6rem; min-height: 46px; padding: .45rem .6rem; border: 1px solid #eadfd5; border-radius: .7rem; color: #3f2d24; text-align: left; background: #fff; font-weight: 750; }
 .maintenance-button:hover { border-color: #c99977; }
 .maintenance-icon { display: grid; width: 1.8rem; height: 1.8rem; place-items: center; border-radius: .55rem; color: #7b3f26; background: #ead7c5; }
@@ -38,6 +42,10 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .button-primary { color: #fffdf9; background: #7b3f26; box-shadow: 0 .4rem 1rem rgb(123 63 38 / 16%); }
 .button-secondary { color: #7b3f26; border-color: #d8bda6; background: #fffdf9; }
 .button-danger { color: #a52d2d; border-color: #e2aaaa; background: #fff8f7; }
+.button-return { color: #fff; background: #2563eb; box-shadow: 0 .4rem 1rem rgb(37 99 235 / 16%); }
+.button-complete { color: #3f2d24; background: #e3a008; box-shadow: 0 .4rem 1rem rgb(227 160 8 / 16%); }
+.payment-action.is-paid { color: #fff; background: #b42318; box-shadow: 0 .4rem 1rem rgb(180 35 24 / 16%); }
+.payment-action.is-pending { color: #fff; background: #226b4e; box-shadow: 0 .4rem 1rem rgb(34 107 78 / 16%); }
 .button-small { min-height: 38px; padding: .45rem .75rem; font-size: .86rem; }
 .order-groups { display: grid; gap: 1.4rem; }
 .order-group h2 { display: flex; align-items: center; gap: .7rem; color: #674f43; font-size: 1rem; }
@@ -59,9 +67,11 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .muted-label, .field-hint { color: #8c7568; font-size: .78rem; }
 .amount { color: #7b3f26; font-size: 1.2rem; }
 .card-chevron { position: absolute; top: 50%; right: .8rem; color: #c99977; font-size: 1.8rem; transform: translateY(-50%); }
-.payment-badge, .status-pill { display: inline-flex; align-items: center; gap: .3rem; width: fit-content; padding: .3rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 800; white-space: nowrap; }
-.is-paid, .completed { color: #226b4e; background: #e0f0e7; }
-.is-pending, .active { color: #98601e; background: #fff0cf; }
+.payment-badge, .payment-status, .status-pill { display: inline-flex; align-items: center; gap: .3rem; width: fit-content; padding: .3rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 800; white-space: nowrap; }
+.payment-badge.is-paid, .payment-status.is-paid { color: #b42318; background: #fde3e1; }
+.payment-badge.is-pending, .payment-status.is-pending { color: #226b4e; background: #e0f0e7; }
+.status-pill.completed { color: #226b4e; background: #e0f0e7; }
+.status-pill.active { color: #98601e; background: #fff0cf; }
 .empty-state { display: grid; justify-items: center; padding: 4rem 1rem; border: 1px dashed #d8bda6; border-radius: 1.25rem; text-align: center; background: rgb(255 253 249 / 65%); }
 .empty-state.compact { padding: 2.5rem 1rem; }
 .empty-state h2 { margin-bottom: .4rem; }
@@ -74,6 +84,14 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .alert-error { color: #8d2929; border: 1px solid #e2aaaa; background: #fff2f1; }
 .section-intro { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
 .section-intro p { margin-bottom: 0; }
+.payment-summary { display: grid; gap: .8rem; margin-bottom: 1.4rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: rgb(255 253 249 / 82%); }
+.payment-summary h2 { margin: 0; color: #674f43; font-size: 1.1rem; }
+.summary-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.summary-card { display: grid; gap: .35rem; padding: .8rem; border-radius: .75rem; }
+.summary-card span { font-size: .78rem; font-weight: 800; }
+.summary-card strong { font-size: 1.15rem; }
+.summary-card.is-paid { color: #b42318; background: #fde3e1; }
+.summary-card.is-pending { color: #226b4e; background: #e0f0e7; }
 .order-form { display: grid; gap: 1rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: #fffdf9; box-shadow: 0 .45rem 1.4rem rgb(74 45 27 / 7%); }
 label { display: grid; gap: .4rem; color: #674f43; font-size: .86rem; font-weight: 750; }
 input, select { width: 100%; padding: .65rem .75rem; border: 1px solid #d8c4b4; border-radius: .65rem; color: #2d211c; background: #fff; outline: none; }
@@ -122,7 +140,8 @@ textarea:focus { border-color: #a4643c; box-shadow: 0 0 0 3px rgb(164 100 60 / 1
   .form-actions.two-actions { grid-template-columns: 1fr 1fr; }
   .order-form { padding: 1.5rem; }
   .order-card { padding: 1.15rem 2.4rem 1.15rem 1.15rem; }
-  .maintenance-actions { grid-template-columns: repeat(3, 1fr); }
+  .maintenance-menu-toggle { display: none; }
+  .maintenance-actions, .maintenance-panel.is-open .maintenance-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
   .maintenance-panel { padding: 1.2rem; }
 }
 

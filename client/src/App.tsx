@@ -52,9 +52,10 @@ function TopActions() {
 }
 
 function MaintenanceActions() {
-  return <section className="maintenance-panel" aria-labelledby="maintenance-title">
-    <div className="maintenance-heading"><h2 id="maintenance-title">Mantenimientos</h2><span>Catálogos y clientes</span></div>
-    <div className="maintenance-actions">
+  const [menuOpen, setMenuOpen] = useState(false);
+  return <section className={`maintenance-panel${menuOpen ? ' is-open' : ''}`} aria-labelledby="maintenance-title">
+    <div className="maintenance-heading"><div className="maintenance-title"><h2 id="maintenance-title">Mantenimientos</h2><span>Catálogos y clientes</span></div><button type="button" className="maintenance-menu-toggle" aria-label={`${menuOpen ? 'Cerrar' : 'Abrir'} menú de mantenimientos`} aria-expanded={menuOpen} aria-controls="maintenance-menu" onClick={() => setMenuOpen((current) => !current)}><span className="maintenance-menu-glyph" aria-hidden="true">☰</span><span>Menú</span></button></div>
+    <div id="maintenance-menu" className="maintenance-actions">
       <button className="maintenance-button" onClick={() => navigate('/mantenimiento/clientes')}><span className="maintenance-icon">♙</span><span>Clientes</span><span aria-hidden="true">›</span></button>
       <button className="maintenance-button" onClick={() => navigate('/mantenimiento/panes')}><span className="maintenance-icon">▣</span><span>Tipos de pan</span><span aria-hidden="true">›</span></button>
       <button className="maintenance-button" onClick={() => navigate('/mantenimiento/ingredientes')}><span className="maintenance-icon">✦</span><span>Ingredientes</span><span aria-hidden="true">›</span></button>
@@ -64,6 +65,18 @@ function MaintenanceActions() {
 
 function PaymentBadge({ paid }: { paid: boolean }) {
   return <span className={`payment-badge ${paid ? 'is-paid' : 'is-pending'}`}><span aria-hidden="true">{paid ? '✓' : '○'}</span>{paid ? 'Pagada' : 'Pendiente'}</span>;
+}
+
+function PaymentStatus({ paid }: { paid: boolean }) {
+  return <span className={`payment-status ${paid ? 'is-paid' : 'is-pending'}`}>{paid ? 'Pagada' : 'Pendiente'}</span>;
+}
+
+function PaymentSummary({ orders }: { orders: Order[] }) {
+  const paymentTotals = useMemo(() => orders.reduce((totals, order) => ({
+    paid: totals.paid + (order.pagada ? order.monto_colones : 0),
+    pending: totals.pending + (order.pagada ? 0 : order.monto_colones),
+  }), { paid: 0, pending: 0 }), [orders]);
+  return <section className="payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumen de pagos</h2><div className="summary-cards"><article className="summary-card is-paid"><span>Pagadas</span><strong>{formatCurrency(paymentTotals.paid)}</strong></article><article className="summary-card is-pending"><span>Pendientes</span><strong>{formatCurrency(paymentTotals.pending)}</strong></article></div></section>;
 }
 
 function OrderCard({ order }: { order: Order }) {
@@ -95,8 +108,10 @@ function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   useEffect(() => { api.getActiveOrders().then(setOrders).catch(setError).finally(() => setLoading(false)); }, []);
-  return <div className="page"><Header /><TopActions /><main className="page-content"><MaintenanceActions />
+  return <div className="page"><Header /><TopActions /><main className="page-content">
     {loading ? <Loading /> : <ErrorMessage error={error} />}
+    {!loading && !error ? <PaymentSummary orders={orders} /> : null}
+    <MaintenanceActions />
     {!loading && !error && orders.length === 0 ? <div className="empty-state"><div className="empty-icon">✦</div><h2>No hay órdenes activas</h2><p>Registra la primera orden para comenzar a organizar tus entregas.</p><button className="button button-primary" onClick={() => navigate('/ordenes/nueva')}>Registrar orden</button></div> : null}
     {!loading && !error && orders.length > 0 ? <GroupedOrders orders={orders} /> : null}
   </main></div>;
@@ -116,8 +131,9 @@ function HistoryPage() {
     return [...grouped.entries()];
   }, [orders]);
   return <div className="page"><Header title="Histórico" onBack={() => navigate('/')} /><main className="page-content">
-    <div className="section-intro"><p>Órdenes completadas, agrupadas por fecha de registro.</p><button className="button button-primary button-small" onClick={() => navigate('/ordenes/nueva')}>+ Nueva orden</button></div>
+    <div className="section-intro"><p>Órdenes completadas, agrupadas por fecha de registro.</p><button className="button button-return button-small" onClick={() => navigate('/')}>Regresar</button></div>
     {loading ? <Loading /> : <ErrorMessage error={error} />}
+    {!loading && !error ? <PaymentSummary orders={orders} /> : null}
     {!loading && !error && orders.length === 0 ? <div className="empty-state compact"><h2>Histórico vacío</h2><p>Las órdenes completadas aparecerán aquí.</p></div> : null}
     {!loading && !error ? <div className="order-groups history-groups">{groups.map(([key, groupedOrders]) => <section className="order-group" key={key}><h2>{formatMonth(`${key}-01`)}</h2>{groupedOrders.map((order) => <OrderCard key={order.id} order={order} />)}</section>)}</div> : null}
   </main></div>;
@@ -263,14 +279,15 @@ function DetailPage({ id }: { id: number }) {
   const [actionLoading, setActionLoading] = useState(false);
   useEffect(() => { api.getOrder(id).then(setOrder).catch(setError).finally(() => setLoading(false)); }, [id]);
   async function complete() { if (!order || !window.confirm('¿Marcar esta orden como completada?')) return; setActionLoading(true); setActionError(null); try { setOrder(await api.completeOrder(order.id)); } catch (action) { setActionError(action); } finally { setActionLoading(false); } }
+  async function togglePayment() { if (!order) return; setActionLoading(true); setActionError(null); try { setOrder(await api.updateOrder(order.id, { pagada: !order.pagada })); } catch (action) { setActionError(action); } finally { setActionLoading(false); } }
   async function remove() { if (!order || !window.confirm('Esta acción eliminará la orden permanentemente. ¿Deseas continuar?')) return; setActionLoading(true); setActionError(null); try { await api.deleteOrder(order.id); navigate('/'); } catch (action) { setActionError(action); setActionLoading(false); } }
   if (loading) return <div className="page"><Header title="Detalle de orden" onBack={() => navigate('/')} /><main className="page-content"><Loading /></main></div>;
   if (!order) return <div className="page"><Header title="Orden no encontrada" onBack={() => navigate('/')} /><main className="page-content"><ErrorMessage error={error ?? new Error('La orden no existe.')} /></main></div>;
   return <div className="page"><Header title={`Orden #${order.id}`} onBack={() => navigate(order.activa ? '/' : '/historial')} /><main className="page-content detail-content">
     <div className="detail-status"><span className={`status-pill ${order.activa ? 'active' : 'completed'}`}>{order.activa ? 'Activa' : 'Completada'}</span><PaymentBadge paid={order.pagada} /></div>
-    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Notas</dt><dd>{order.notas || 'Sin notas'}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd>{order.pagada ? 'Pagada' : 'Pendiente'}</dd></div></dl></section>
+    <section className="detail-card"><div className="detail-hero"><span className="detail-alias">{order.cliente.alias}</span><strong>{formatCurrency(order.monto_colones)}</strong></div><dl className="detail-list"><div><dt>Cliente</dt><dd>{order.cliente.nombre_completo || order.cliente.alias}</dd></div><div><dt>Notas</dt><dd>{order.notas || 'Sin notas'}</dd></div><div><dt>Fecha de registro</dt><dd>{formatDate(order.fecha_registro)}</dd></div><div><dt>Fecha de entrega</dt><dd>{formatDate(order.fecha_entrega)}</dd></div><div><dt>Hora de entrega</dt><dd>{formatTime(order.hora_entrega)}</dd></div><div><dt>Tipo de pan</dt><dd>{order.tipo_pan}</dd></div><div><dt>Ingredientes adicionales</dt><dd>{order.ingrediente_adicional}</dd></div><div><dt>Estado de pago</dt><dd><PaymentStatus paid={order.pagada} /></dd></div></dl></section>
     <ErrorMessage error={actionError} />
-    <div className="detail-actions"><button className="button button-primary" onClick={() => navigate(`/ordenes/${order.id}/editar`)} disabled={actionLoading}>Editar orden</button>{order.activa ? <button className="button button-secondary" onClick={complete} disabled={actionLoading}>{actionLoading ? 'Procesando…' : 'Marcar completada'}</button> : null}<button className="button button-danger" onClick={remove} disabled={actionLoading}>Eliminar orden</button></div>
+    <div className="detail-actions"><button className="button button-return" onClick={() => navigate(order.activa ? '/' : '/historial')} disabled={actionLoading}>Regresar</button><button className={`button payment-action ${order.pagada ? 'is-paid' : 'is-pending'}`} onClick={togglePayment} disabled={actionLoading}>{actionLoading ? 'Procesando…' : order.pagada ? 'Marcar Pendiente' : 'Marcar Pagada'}</button><button className="button button-primary" onClick={() => navigate(`/ordenes/${order.id}/editar`)} disabled={actionLoading}>Editar orden</button>{order.activa ? <button className="button button-complete" onClick={complete} disabled={actionLoading}>{actionLoading ? 'Procesando…' : 'Marcar completada'}</button> : null}<button className="button button-danger" onClick={remove} disabled={actionLoading}>Eliminar orden</button></div>
   </main></div>;
 }
 
