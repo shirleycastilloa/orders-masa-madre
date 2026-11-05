@@ -123,6 +123,10 @@ test('muestra el resumen de pagos de las órdenes activas', async ({ page }) => 
   await expect(summary).toBeVisible();
   await expect(summary.getByText('₡12,500')).toBeVisible();
   await expect(summary.getByText('₡8,000')).toBeVisible();
+  await expect(summary.locator('.summary-card.is-paid')).toContainText('Cantidad de órdenes');
+  await expect(summary.locator('.summary-card.is-paid .summary-card-count')).toHaveText('1');
+  await expect(summary.locator('.summary-card.is-pending')).toContainText('Cantidad de órdenes');
+  await expect(summary.locator('.summary-card.is-pending .summary-card-count')).toHaveText('1');
   await expect(summary.locator('.summary-card.is-paid')).toHaveCSS('background-color', 'rgb(224, 240, 231)');
   await expect(summary.locator('.summary-card.is-pending')).toHaveCSS('background-color', 'rgb(253, 227, 225)');
 });
@@ -214,6 +218,8 @@ test('muestra el resumen de pagos del histórico y permite regresar', async ({ p
   const summary = page.getByRole('region', { name: 'Resumen de pagos' });
   await expect(summary.getByText('₡12,500')).toBeVisible();
   await expect(summary.getByText('₡8,000')).toBeVisible();
+  await expect(summary.locator('.summary-card.is-paid .summary-card-count')).toHaveText('1');
+  await expect(summary.locator('.summary-card.is-pending .summary-card-count')).toHaveText('1');
   await expect(page.getByRole('button', { name: 'Regresar' })).toHaveClass(/button-return/);
   await page.getByRole('button', { name: 'Regresar' }).click();
   await expect(page).toHaveURL(/\/#\/$/);

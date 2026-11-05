@@ -90,6 +90,8 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .summary-card { display: grid; gap: .35rem; padding: .8rem; border-radius: .75rem; }
 .summary-card span { font-size: .78rem; font-weight: 800; }
 .summary-card strong { font-size: 1.15rem; }
+.summary-card-count-label { margin-top: .25rem; }
+.summary-card-count { font-size: 1.05rem !important; }
 .summary-card.is-paid { color: #226b4e; background: #e0f0e7; }
 .summary-card.is-pending { color: #b42318; background: #fde3e1; }
 .order-form { display: grid; gap: 1rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: #fffdf9; box-shadow: 0 .45rem 1.4rem rgb(74 45 27 / 7%); }

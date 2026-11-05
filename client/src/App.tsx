@@ -75,8 +75,10 @@ function PaymentSummary({ orders }: { orders: Order[] }) {
   const paymentTotals = useMemo(() => orders.reduce((totals, order) => ({
     paid: totals.paid + (order.pagada ? order.monto_colones : 0),
     pending: totals.pending + (order.pagada ? 0 : order.monto_colones),
-  }), { paid: 0, pending: 0 }), [orders]);
-  return <section className="payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumen de pagos</h2><div className="summary-cards"><article className="summary-card is-paid"><span>Pagadas</span><strong>{formatCurrency(paymentTotals.paid)}</strong></article><article className="summary-card is-pending"><span>Pendientes</span><strong>{formatCurrency(paymentTotals.pending)}</strong></article></div></section>;
+    paidCount: totals.paidCount + (order.pagada ? 1 : 0),
+    pendingCount: totals.pendingCount + (order.pagada ? 0 : 1),
+  }), { paid: 0, pending: 0, paidCount: 0, pendingCount: 0 }), [orders]);
+  return <section className="payment-summary" aria-labelledby="payment-summary-title"><h2 id="payment-summary-title">Resumen de pagos</h2><div className="summary-cards"><article className="summary-card is-paid"><span>Pagadas</span><strong>{formatCurrency(paymentTotals.paid)}</strong><span className="summary-card-count-label">Cantidad de órdenes</span><strong className="summary-card-count">{paymentTotals.paidCount}</strong></article><article className="summary-card is-pending"><span>Pendientes</span><strong>{formatCurrency(paymentTotals.pending)}</strong><span className="summary-card-count-label">Cantidad de órdenes</span><strong className="summary-card-count">{paymentTotals.pendingCount}</strong></article></div></section>;
 }
 
 function OrderCard({ order }: { order: Order }) {
