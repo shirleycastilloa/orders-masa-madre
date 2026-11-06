@@ -242,6 +242,16 @@ test('muestra y registra gastos ordenados por fecha', async ({ page }) => {
       resumen: { total_gastos: expenses.reduce((sum, expense) => sum + expense.monto, 0), total_pagadas: 12000, total_pendientes: 8000, ganancias_netas: 7500, ganancias_brutas: 15500 },
     }, error: null } });
   });
+  await page.route('**/api/gastos/*', async (route) => {
+    const id = Number(route.request().url().split('/').pop());
+    if (route.request().method() === 'PATCH') {
+      const body = route.request().postDataJSON() as { monto: number; detalle: string };
+      expenses = expenses.map((expense) => expense.id === id ? { ...expense, ...body } : expense);
+      return route.fulfill({ json: { data: expenses.find((expense) => expense.id === id), error: null } });
+    }
+    expenses = expenses.filter((expense) => expense.id !== id);
+    return route.fulfill({ status: 204 });
+  });
 
   await page.goto('/#/gastos');
   await expect(page.getByRole('heading', { name: 'Gastos', exact: true })).toBeVisible();
@@ -254,4 +264,15 @@ test('muestra y registra gastos ordenados por fecha', async ({ page }) => {
   await page.getByRole('button', { name: 'Guardar gasto' }).click();
   await expect(page.locator('.expense-row').first()).toContainText('Leña');
   await expect(page.getByText('₡7,000')).toBeVisible();
+  await page.locator('.expense-row').first().click();
+  await page.getByRole('button', { name: 'Editar' }).click();
+  await page.getByLabel('Monto').fill('3000');
+  await page.getByLabel('Detalle').fill('Leña editada');
+  await page.getByRole('button', { name: 'Guardar cambios' }).click();
+  await expect(page.locator('.expense-row').first()).toContainText('Leña editada');
+  await page.locator('.expense-row').first().click();
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.getByRole('button', { name: 'Eliminar' }).click();
+  await expect(page.locator('.expense-row').first()).toContainText('Harina');
+  await expect(page.getByText('Leña editada')).not.toBeVisible();
 });

@@ -162,6 +162,8 @@ function ExpensePage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
   const [draft, setDraft] = useState<ExpenseDraft>(emptyExpenseDraft);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -184,8 +186,27 @@ function ExpensePage() {
 
   function reset() {
     setDraft(emptyExpenseDraft);
+    setSelectedId(null);
+    setEditingId(null);
     setShowForm(false);
     setError(null);
+  }
+
+  function startCreate() {
+    setDraft(emptyExpenseDraft);
+    setSelectedId(null);
+    setEditingId(null);
+    setError(null);
+    setShowForm(true);
+  }
+
+  function editExpense(expense: Expense) {
+    setSelectedId(expense.id);
+    setEditingId(expense.id);
+    setDraft({ monto: formatAmountInput(String(expense.monto)), detalle: expense.detalle });
+    setError(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function save(event: FormEvent) {
@@ -193,7 +214,9 @@ function ExpensePage() {
     setSaving(true);
     setError(null);
     try {
-      await api.createExpense({ monto: parseAmount(draft.monto), detalle: draft.detalle });
+      const body = { monto: parseAmount(draft.monto), detalle: draft.detalle };
+      if (editingId) await api.updateExpense(editingId, body);
+      else await api.createExpense(body);
       reset();
       await load();
     } catch (saveError) {
@@ -203,12 +226,28 @@ function ExpensePage() {
     }
   }
 
+  async function removeExpense(expense: Expense) {
+    if (!window.confirm(`¿Eliminar el gasto “${expense.detalle}”? Esta acción no se puede deshacer.`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.deleteExpense(expense.id);
+      if (editingId === expense.id) reset();
+      else setSelectedId(null);
+      await load();
+    } catch (removeError) {
+      setError(removeError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return <div className="page"><Header title="Gastos" onBack={() => navigate('/')} /><main className="page-content expenses-page">
-    <div className="expenses-heading"><div><p className="maintenance-description">Registra y consulta los gastos del negocio.</p></div><button className="button button-primary" onClick={() => { setError(null); setShowForm((current) => !current); }}>{showForm ? 'Cerrar' : 'Registrar gasto'}</button></div>
-    {showForm ? <form className="maintenance-form expense-form" onSubmit={save}><div className="maintenance-form-title">Registrar gasto</div><div className="read-only-info"><span>Fecha de registro</span><strong>{formatDate(today())}</strong></div><label>Monto<input inputMode="numeric" value={draft.monto} onChange={(event) => setDraft({ ...draft, monto: formatAmountInput(event.target.value) })} placeholder="0" required /><small className="field-hint">Colones, sin decimales</small></label><label>Detalle<textarea value={draft.detalle} onChange={(event) => setDraft({ ...draft, detalle: event.target.value })} rows={3} placeholder="Describe el gasto" required /></label><ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Cancelar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar gasto'}</button></div></form> : null}
+    <div className="expenses-heading"><div><p className="maintenance-description">Registra y consulta los gastos del negocio.</p></div><button className="button button-primary" onClick={() => showForm ? reset() : startCreate()}>{showForm ? 'Cerrar' : 'Registrar gasto'}</button></div>
+    {showForm ? <form className="maintenance-form expense-form" onSubmit={save}><div className="maintenance-form-title">{editingId ? 'Editar gasto' : 'Registrar gasto'}</div><div className="read-only-info"><span>Fecha de registro</span><strong>{editingId ? formatDate(expenses.find((expense) => expense.id === editingId)?.fecha_registro ?? today()) : formatDate(today())}</strong></div><label>Monto<input inputMode="numeric" value={draft.monto} onChange={(event) => setDraft({ ...draft, monto: formatAmountInput(event.target.value) })} placeholder="0" required /><small className="field-hint">Colones, sin decimales</small></label><label>Detalle<textarea value={draft.detalle} onChange={(event) => setDraft({ ...draft, detalle: event.target.value })} rows={3} placeholder="Describe el gasto" required /></label><ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Cancelar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Guardar gasto'}</button></div></form> : null}
     {loading ? <Loading /> : <ErrorMessage error={showForm ? null : error} />}
     {!loading && !error && summary ? <ExpenseSummary summary={summary} /> : null}
-    {!loading && !error ? <section className="expenses-list-section" aria-labelledby="expenses-list-title"><div className="maintenance-list-heading"><h2 id="expenses-list-title">Gastos registrados</h2><span className="field-hint">Más recientes primero</span></div>{expenses.length === 0 ? <div className="empty-state compact"><h2>No hay gastos registrados</h2><p>Registra el primer gasto del negocio.</p></div> : <div className="expenses-list">{expenses.map((expense) => <article className="expense-row" key={expense.id}><div className="expense-row-main"><strong>{expense.detalle}</strong><span>{formatDate(expense.fecha_registro)}</span></div><strong className="amount">{formatCurrency(expense.monto)}</strong></article>)}</div>}</section> : null}
+    {!loading && !error ? <section className="expenses-list-section" aria-labelledby="expenses-list-title"><div className="maintenance-list-heading"><h2 id="expenses-list-title">Gastos registrados</h2><span className="field-hint">Selecciona un gasto para editarlo o eliminarlo</span></div>{expenses.length === 0 ? <div className="empty-state compact"><h2>No hay gastos registrados</h2><p>Registra el primer gasto del negocio.</p></div> : <div className="expenses-list">{expenses.map((expense) => <article className={`expense-row${selectedId === expense.id ? ' is-selected' : ''}`} key={expense.id} onClick={() => setSelectedId((current) => current === expense.id ? null : expense.id)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedId((current) => current === expense.id ? null : expense.id); } }} role="button" tabIndex={0} aria-label={`Seleccionar gasto ${expense.detalle}`} aria-pressed={selectedId === expense.id}><div className="expense-row-main"><strong>{expense.detalle}</strong><span>{formatDate(expense.fecha_registro)}</span></div><div className="expense-row-end"><strong className="amount">{formatCurrency(expense.monto)}</strong>{selectedId === expense.id ? <div className="row-actions expense-row-actions"><button className="button button-secondary button-small" onClick={(event) => { event.stopPropagation(); editExpense(expense); }}>Editar</button><button className="button button-danger button-small" onClick={(event) => { event.stopPropagation(); void removeExpense(expense); }} disabled={saving}>Eliminar</button></div> : null}</div></article>)}</div>}</section> : null}
   </main></div>;
 }
 

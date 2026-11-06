@@ -25,7 +25,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Mantenimiento de clientes: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
-- Módulo de Gastos disponible en `/gastos`, con registro de monto y detalle, fecha automática de registro y listado del gasto más reciente al más antiguo.
+- Módulo de Gastos disponible en `/gastos`, con registro de monto y detalle, fecha automática de registro y listado del gasto más reciente al más antiguo. Cada fila se puede seleccionar para editar o eliminar físicamente el gasto.
 - Resumen financiero de Gastos: total de gastos, total de órdenes pagadas, total de órdenes pendientes, ganancias netas (`pagadas - gastos`) y ganancias brutas (`pagadas + pendientes - gastos`). Los totales de órdenes consideran registros activos e históricos.
 - En móvil, el resumen financiero se presenta en tres filas: total de gastos; pagadas y pendientes; ganancias netas y brutas.
 - Selector de hora con presentación AM/PM y montos con separador de miles sin decimales.
@@ -98,6 +98,8 @@ Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adiciona
 - `DELETE /api/clientes/:id`
 - `GET /api/gastos` — devuelve gastos registrados y resumen financiero.
 - `POST /api/gastos` — registra un gasto con `monto` y `detalle`; `fecha_registro` se asigna con la zona horaria del negocio.
+- `PATCH /api/gastos/:id` — modifica el monto o detalle de un gasto.
+- `DELETE /api/gastos/:id` — elimina físicamente un gasto de la tabla `gastos`.
 - `GET /api/catalogos`
 - `POST|PATCH|DELETE /api/catalogos/tipos-pan`
 - `POST|PATCH|DELETE /api/catalogos/ingredientes`

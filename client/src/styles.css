@@ -111,11 +111,15 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .expense-form { margin-bottom: .2rem; }
 .expenses-list-section { display: grid; gap: .8rem; }
 .expenses-list { display: grid; gap: .6rem; }
-.expense-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4.2rem; padding: .8rem 1rem; border: 1px solid #eadfd5; border-radius: .8rem; background: #fffdf9; box-shadow: 0 .3rem 1rem rgb(74 45 27 / 5%); }
+.expense-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4.2rem; padding: .8rem 1rem; border: 1px solid #eadfd5; border-radius: .8rem; background: #fffdf9; box-shadow: 0 .3rem 1rem rgb(74 45 27 / 5%); cursor: pointer; }
+.expense-row:hover, .expense-row.is-selected { border-color: #c99977; box-shadow: 0 .35rem 1.1rem rgb(123 63 38 / 10%); }
+.expense-row:focus-visible { outline: 3px solid rgb(164 100 60 / 25%); outline-offset: 2px; }
 .expense-row-main { display: grid; min-width: 0; gap: .25rem; }
 .expense-row-main strong { overflow: hidden; text-overflow: ellipsis; }
 .expense-row-main span { color: #8c7568; font-size: .78rem; }
-.expense-row > .amount { white-space: nowrap; }
+.expense-row-end { display: grid; justify-items: end; gap: .5rem; }
+.expense-row-end > .amount { white-space: nowrap; }
+.expense-row-actions { flex-wrap: nowrap; }
 .order-form { display: grid; gap: 1rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: #fffdf9; box-shadow: 0 .45rem 1.4rem rgb(74 45 27 / 7%); }
 label { display: grid; gap: .4rem; color: #674f43; font-size: .86rem; font-weight: 750; }
 input, select { width: 100%; padding: .65rem .75rem; border: 1px solid #d8c4b4; border-radius: .65rem; color: #2d211c; background: #fff; outline: none; }

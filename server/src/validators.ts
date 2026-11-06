@@ -60,6 +60,10 @@ export const expenseCreateSchema = z
   })
   .strict();
 
+export const expenseUpdateSchema = expenseCreateSchema.partial().refine((data) => Object.keys(data).length > 0, {
+  message: 'Debes enviar al menos un campo para actualizar.',
+});
+
 export function normalizeOptionalText(value: string | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;

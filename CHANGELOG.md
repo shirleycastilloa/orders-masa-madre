@@ -8,6 +8,7 @@
 - Se agregó el listado de gastos ordenado de la fecha más actual a la más antigua.
 - Se agregó el resumen financiero con total de gastos, órdenes pagadas, órdenes pendientes, ganancias netas y ganancias brutas.
 - Se ajustó el resumen financiero para mostrar una distribución de tres filas en dispositivos móviles.
+- Se agregaron las acciones de editar y eliminar gastos desde filas seleccionables; la eliminación es física en la tabla `gastos`.
 - Se agregaron pruebas E2E para consultar y registrar gastos.
 
 ## Versión 0.1.2 — 2026-10-31

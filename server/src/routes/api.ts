@@ -6,6 +6,7 @@ import {
   clientCreateSchema,
   clientUpdateSchema,
   expenseCreateSchema,
+  expenseUpdateSchema,
   breadTypeCreateSchema,
   breadTypeUpdateSchema,
   getNumericId,
@@ -343,6 +344,38 @@ apiRouter.post('/gastos', async (request, response) => {
     args: [Number(result.lastInsertRowid)],
   });
   return sendData(response, mapExpense(created.rows[0] as Record<string, unknown>), 201);
+});
+
+apiRouter.patch('/gastos/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const data = expenseUpdateSchema.parse(request.body);
+  const current = await db.execute({ sql: 'SELECT id FROM gastos WHERE id = ?', args: [id] });
+  if (current.rows.length === 0) throw new ApiError(404, 'EXPENSE_NOT_FOUND', 'Gasto no encontrado.');
+
+  const assignments: string[] = [];
+  const args: InValue[] = [];
+  if (data.monto !== undefined) {
+    assignments.push('monto = ?');
+    args.push(data.monto);
+  }
+  if (data.detalle !== undefined) {
+    assignments.push('detalle = ?');
+    args.push(data.detalle);
+  }
+  args.push(id);
+  await db.execute({ sql: `UPDATE gastos SET ${assignments.join(', ')} WHERE id = ?`, args });
+  const updated = await db.execute({
+    sql: 'SELECT id, fecha_registro, monto, detalle FROM gastos WHERE id = ?',
+    args: [id],
+  });
+  return sendData(response, mapExpense(updated.rows[0] as Record<string, unknown>));
+});
+
+apiRouter.delete('/gastos/:id', async (request, response) => {
+  const id = getNumericId(request.params.id);
+  const result = await db.execute({ sql: 'DELETE FROM gastos WHERE id = ?', args: [id] });
+  if (result.rowsAffected === 0) throw new ApiError(404, 'EXPENSE_NOT_FOUND', 'Gasto no encontrado.');
+  return response.status(204).send();
 });
 
 async function listOrders(active: boolean) {
