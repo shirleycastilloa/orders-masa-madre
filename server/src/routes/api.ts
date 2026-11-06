@@ -5,6 +5,7 @@ import { ApiError, sendData } from '../http.js';
 import {
   clientCreateSchema,
   clientUpdateSchema,
+  expenseCreateSchema,
   breadTypeCreateSchema,
   breadTypeUpdateSchema,
   getNumericId,
@@ -89,6 +90,15 @@ function getBusinessDate() {
   }).formatToParts(new Date());
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day}`;
+}
+
+function mapExpense(row: Record<string, unknown>) {
+  return {
+    id: Number(row.id),
+    fecha_registro: row.fecha_registro,
+    monto: Number(row.monto),
+    detalle: row.detalle,
+  };
 }
 
 async function getOrder(id: number) {
@@ -294,6 +304,45 @@ apiRouter.delete('/clientes/:id', async (request, response) => {
   const result = await db.execute({ sql: 'DELETE FROM clientes WHERE id = ?', args: [id] });
   if (result.rowsAffected === 0) throw new ApiError(404, 'CLIENT_NOT_FOUND', 'Cliente no encontrado.');
   return response.status(204).send();
+});
+
+apiRouter.get('/gastos', async (_request, response) => {
+  const [expenses, totals] = await Promise.all([
+    db.execute('SELECT id, fecha_registro, monto, detalle FROM gastos ORDER BY fecha_registro DESC, id DESC'),
+    db.execute(`
+      SELECT
+        COALESCE(SUM(CASE WHEN pagada = 1 THEN monto_colones ELSE 0 END), 0) AS pagadas,
+        COALESCE(SUM(CASE WHEN pagada = 0 THEN monto_colones ELSE 0 END), 0) AS pendientes
+      FROM ordenes
+    `),
+  ]);
+  const totalsRow = totals.rows[0] as Record<string, unknown>;
+  const totalPagadas = Number(totalsRow.pagadas ?? 0);
+  const totalPendientes = Number(totalsRow.pendientes ?? 0);
+  const totalGastos = expenses.rows.reduce((sum, row) => sum + Number((row as Record<string, unknown>).monto ?? 0), 0);
+  return sendData(response, {
+    gastos: expenses.rows.map((row) => mapExpense(row as Record<string, unknown>)),
+    resumen: {
+      total_gastos: totalGastos,
+      total_pagadas: totalPagadas,
+      total_pendientes: totalPendientes,
+      ganancias_netas: totalPagadas - totalGastos,
+      ganancias_brutas: totalPagadas + totalPendientes - totalGastos,
+    },
+  });
+});
+
+apiRouter.post('/gastos', async (request, response) => {
+  const data = expenseCreateSchema.parse(request.body);
+  const result = await db.execute({
+    sql: 'INSERT INTO gastos (fecha_registro, monto, detalle) VALUES (?, ?, ?)',
+    args: [getBusinessDate(), data.monto, data.detalle],
+  });
+  const created = await db.execute({
+    sql: 'SELECT id, fecha_registro, monto, detalle FROM gastos WHERE id = ?',
+    args: [Number(result.lastInsertRowid)],
+  });
+  return sendData(response, mapExpense(created.rows[0] as Record<string, unknown>), 201);
 });
 
 async function listOrders(active: boolean) {

@@ -1,5 +1,14 @@
 # Historial de cambios
 
+## Versión 0.1.3 — 2026-11-06
+
+- Se agregó el módulo de Gastos con la tabla `gastos` y la migración `005_expenses`.
+- La pantalla principal ahora muestra los accesos `+ Orden`, `Histórico` y `Gastos`.
+- Se agregó el registro de gastos con monto, detalle y fecha automática según `APP_TIMEZONE`.
+- Se agregó el listado de gastos ordenado de la fecha más actual a la más antigua.
+- Se agregó el resumen financiero con total de gastos, órdenes pagadas, órdenes pendientes, ganancias netas y ganancias brutas.
+- Se agregaron pruebas E2E para consultar y registrar gastos.
+
 ## Versión 0.1.2 — 2026-10-31
 
 - El Histórico se ordena por fecha de registro ascendente.

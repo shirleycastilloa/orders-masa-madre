@@ -9,7 +9,7 @@ La primera versión funcional está implementada, probada y publicada en Render:
 - Aplicación: [orders-masa-madre.onrender.com](https://orders-masa-madre.onrender.com)
 - Repositorio: [github.com/shirleycastilloa/orders-masa-madre](https://github.com/shirleycastilloa/orders-masa-madre)
 - Base de datos remota: Turso/libSQL
-- Últimas funcionalidades incorporadas: notas específicas por orden y mantenimientos de clientes, tipos de pan e ingredientes adicionales.
+- Últimas funcionalidades incorporadas: registro de gastos, resumen financiero y mantenimientos de clientes, tipos de pan e ingredientes adicionales.
 
 La aplicación no tiene autenticación ni autorización por decisión de alcance. Cualquier persona que conozca la URL puede consultar y modificar la información.
 
@@ -25,6 +25,8 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Mantenimiento de clientes: crear, editar, buscar y eliminar cuando no tienen órdenes relacionadas.
 - Mantenimiento de tipos de pan: crear, editar y eliminar cuando no están siendo utilizados.
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
+- Módulo de Gastos disponible en `/gastos`, con registro de monto y detalle, fecha automática de registro y listado del gasto más reciente al más antiguo.
+- Resumen financiero de Gastos: total de gastos, total de órdenes pagadas, total de órdenes pendientes, ganancias netas (`pagadas - gastos`) y ganancias brutas (`pagadas + pendientes - gastos`). Los totales de órdenes consideran registros activos e históricos.
 - Selector de hora con presentación AM/PM y montos con separador de miles sin decimales.
 - Validación en frontend y backend.
 - Health check disponible en `/api/health`.
@@ -84,7 +86,7 @@ Base remota configurada para la aplicación:
 - Región: `aws-us-east-1`
 - URL: `libsql://orders-masa-madre-shirleycastilloa.aws-us-east-1.turso.io`
 
-Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes` y el control de migraciones. Las migraciones posteriores agregan `ordenes.notas`, eliminan la columna antigua de notas de clientes y cargan cuatro órdenes históricas de octubre de 2026 mediante `004_historical_orders_october_2026`. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
+Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adicionales`, `ordenes`, `gastos` y el control de migraciones. Las migraciones posteriores agregan `ordenes.notas`, eliminan la columna antigua de notas de clientes, cargan cuatro órdenes históricas de octubre de 2026 mediante `004_historical_orders_october_2026` y agregan la tabla de gastos mediante `005_expenses`. El seed es idempotente e incluye Bolla, Cuadrado, Sin ingredientes adicionales, Pasas, Frutos rojos, Cherrys, Pistachos y Semillas.
 
 ## API principal
 
@@ -93,6 +95,8 @@ Las migraciones crean las tablas `clientes`, `tipos_pan`, `ingredientes_adiciona
 - `POST /api/clientes`
 - `PATCH /api/clientes/:id`
 - `DELETE /api/clientes/:id`
+- `GET /api/gastos` — devuelve gastos registrados y resumen financiero.
+- `POST /api/gastos` — registra un gasto con `monto` y `detalle`; `fecha_registro` se asigna con la zona horaria del negocio.
 - `GET /api/catalogos`
 - `POST|PATCH|DELETE /api/catalogos/tipos-pan`
 - `POST|PATCH|DELETE /api/catalogos/ingredientes`
@@ -140,7 +144,7 @@ npm run lint
 npm run build
 ```
 
-La suite end-to-end cubre el alta de una orden, el alta rápida de cliente, el día y las notas de una tarjeta activa y la navegación hacia los mantenimientos. Las pruebas de integración de API contra Turso usan datos temporales, los eliminan al terminar y utilizan tokens temporales invalidados después de la prueba.
+La suite end-to-end cubre el alta de una orden, el alta rápida de cliente, el día y las notas de una tarjeta activa, la navegación hacia los mantenimientos y el registro de gastos ordenados por fecha. Las pruebas de integración de API contra Turso usan datos temporales, los eliminan al terminar y utilizan tokens temporales invalidados después de la prueba.
 
 ## Etapas completadas
 

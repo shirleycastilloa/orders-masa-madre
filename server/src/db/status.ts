@@ -4,12 +4,12 @@ const tables = await db.execute(`
   SELECT name
   FROM sqlite_master
   WHERE type = 'table'
-    AND name IN ('schema_migrations', 'clientes', 'tipos_pan', 'ingredientes_adicionales', 'ordenes')
+    AND name IN ('schema_migrations', 'clientes', 'tipos_pan', 'ingredientes_adicionales', 'ordenes', 'gastos')
   ORDER BY name
 `);
 
 const counts = await Promise.all(
-  ['clientes', 'tipos_pan', 'ingredientes_adicionales', 'ordenes'].map(async (table) => {
+  ['clientes', 'tipos_pan', 'ingredientes_adicionales', 'ordenes', 'gastos'].map(async (table) => {
     const result = await db.execute(`SELECT COUNT(*) AS count FROM ${table}`);
     return `${table}=${result.rows[0]?.count ?? 0}`;
   }),

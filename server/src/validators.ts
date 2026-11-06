@@ -53,6 +53,13 @@ export const orderUpdateSchema = orderCreateSchema
     message: 'Debes enviar al menos un campo para actualizar.',
   });
 
+export const expenseCreateSchema = z
+  .object({
+    monto: amountSchema,
+    detalle: z.string().trim().min(1, 'El detalle es obligatorio.'),
+  })
+  .strict();
+
 export function normalizeOptionalText(value: string | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;

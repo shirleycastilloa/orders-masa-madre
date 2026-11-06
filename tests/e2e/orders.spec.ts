@@ -225,3 +225,33 @@ test('muestra el resumen de pagos del histórico y permite regresar', async ({ p
   await expect(page).toHaveURL(/\/#\/$/);
   await expect(page.getByRole('heading', { name: 'Órdenes activas', exact: true })).toBeVisible();
 });
+
+test('muestra y registra gastos ordenados por fecha', async ({ page }) => {
+  let expenses = [
+    { id: 2, fecha_registro: '2026-11-05', monto: 3000, detalle: 'Harina' },
+    { id: 1, fecha_registro: '2026-11-01', monto: 1500, detalle: 'Empaques' },
+  ];
+  await page.route('**/api/gastos', async (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON() as { monto: number; detalle: string };
+      expenses = [{ id: 3, fecha_registro: '2026-11-06', ...body }, ...expenses];
+      return route.fulfill({ status: 201, json: { data: expenses[0], error: null } });
+    }
+    return route.fulfill({ json: { data: {
+      gastos: expenses,
+      resumen: { total_gastos: expenses.reduce((sum, expense) => sum + expense.monto, 0), total_pagadas: 12000, total_pendientes: 8000, ganancias_netas: 7500, ganancias_brutas: 15500 },
+    }, error: null } });
+  });
+
+  await page.goto('/#/gastos');
+  await expect(page.getByRole('heading', { name: 'Gastos', exact: true })).toBeVisible();
+  await expect(page.getByText('Total de gastos')).toBeVisible();
+  await expect(page.getByText('₡4,500')).toBeVisible();
+  await expect(page.locator('.expense-row').first()).toContainText('Harina');
+  await page.getByRole('button', { name: 'Registrar gasto' }).click();
+  await page.getByLabel('Monto').fill('2500');
+  await page.getByLabel('Detalle').fill('Leña');
+  await page.getByRole('button', { name: 'Guardar gasto' }).click();
+  await expect(page.locator('.expense-row').first()).toContainText('Leña');
+  await expect(page.getByText('₡7,000')).toBeVisible();
+});

@@ -1,13 +1,14 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { api, ApiClientError, Catalogs, Client, Order } from './lib/api';
+import { api, ApiClientError, Catalogs, Client, Expense, ExpenseSummary, Order } from './lib/api';
 import { formatAmountInput, formatCurrency, formatDate, formatMonth, formatTime, formatWeekday, parseAmount } from './lib/format';
 
 type MaintenanceKind = 'clientes' | 'panes' | 'ingredientes';
-type Route = { page: 'home' | 'new' | 'detail' | 'history' | 'maintenance'; id?: number; kind?: MaintenanceKind };
+type Route = { page: 'home' | 'new' | 'detail' | 'history' | 'expenses' | 'maintenance'; id?: number; kind?: MaintenanceKind };
 
 function readRoute(): Route {
   const value = window.location.hash.replace(/^#/, '') || '/';
   if (value === '/historial') return { page: 'history' };
+  if (value === '/gastos') return { page: 'expenses' };
   if (value === '/ordenes/nueva') return { page: 'new' };
   const maintenance = value.match(/^\/mantenimiento\/(clientes|panes|ingredientes)$/);
   if (maintenance) return { page: 'maintenance', kind: maintenance[1] as MaintenanceKind };
@@ -46,8 +47,9 @@ function Header({ title, onBack }: { title?: string; onBack?: () => void }) {
 
 function TopActions() {
   return <div className="top-actions">
-    <button className="button button-primary" onClick={() => navigate('/ordenes/nueva')}>+ Registrar orden</button>
+    <button className="button button-primary" onClick={() => navigate('/ordenes/nueva')}>+ Orden</button>
     <button className="button button-secondary" onClick={() => navigate('/historial')}>Histórico</button>
+    <button className="button button-secondary" onClick={() => navigate('/gastos')}>Gastos</button>
   </div>;
 }
 
@@ -138,6 +140,75 @@ function HistoryPage() {
     {!loading && !error ? <PaymentSummary orders={orders} /> : null}
     {!loading && !error && orders.length === 0 ? <div className="empty-state compact"><h2>Histórico vacío</h2><p>Las órdenes completadas aparecerán aquí.</p></div> : null}
     {!loading && !error ? <div className="order-groups history-groups">{groups.map(([key, groupedOrders]) => <section className="order-group" key={key}><h2>{formatMonth(`${key}-01`)}</h2>{groupedOrders.map((order) => <OrderCard key={order.id} order={order} />)}</section>)}</div> : null}
+  </main></div>;
+}
+
+type ExpenseDraft = { monto: string; detalle: string };
+
+const emptyExpenseDraft: ExpenseDraft = { monto: '', detalle: '' };
+
+function ExpenseSummary({ summary }: { summary: ExpenseSummary }) {
+  const cards = [
+    { label: 'Total de gastos', value: summary.total_gastos, className: 'is-expense' },
+    { label: 'Total pagadas', value: summary.total_pagadas, className: 'is-paid' },
+    { label: 'Total Pendientes', value: summary.total_pendientes, className: 'is-pending' },
+    { label: 'Ganancias netas', value: summary.ganancias_netas, className: 'is-net' },
+    { label: 'Ganancias Brutas', value: summary.ganancias_brutas, className: 'is-gross' },
+  ];
+  return <section className="expense-summary" aria-labelledby="expense-summary-title"><h2 id="expense-summary-title">Resumen financiero</h2><div className="expense-summary-grid">{cards.map((card) => <article className={`expense-summary-card ${card.className}`} key={card.label}><span>{card.label}</span><strong>{formatCurrency(card.value)}</strong></article>)}</div></section>;
+}
+
+function ExpensePage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [summary, setSummary] = useState<ExpenseSummary | null>(null);
+  const [draft, setDraft] = useState<ExpenseDraft>(emptyExpenseDraft);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const data = await api.getExpenses();
+      setExpenses(data.gastos);
+      setSummary(data.resumen);
+    } catch (loadError) {
+      setError(loadError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  function reset() {
+    setDraft(emptyExpenseDraft);
+    setShowForm(false);
+    setError(null);
+  }
+
+  async function save(event: FormEvent) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await api.createExpense({ monto: parseAmount(draft.monto), detalle: draft.detalle });
+      reset();
+      await load();
+    } catch (saveError) {
+      setError(saveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return <div className="page"><Header title="Gastos" onBack={() => navigate('/')} /><main className="page-content expenses-page">
+    <div className="expenses-heading"><div><p className="maintenance-description">Registra y consulta los gastos del negocio.</p></div><button className="button button-primary" onClick={() => { setError(null); setShowForm((current) => !current); }}>{showForm ? 'Cerrar' : 'Registrar gasto'}</button></div>
+    {showForm ? <form className="maintenance-form expense-form" onSubmit={save}><div className="maintenance-form-title">Registrar gasto</div><div className="read-only-info"><span>Fecha de registro</span><strong>{formatDate(today())}</strong></div><label>Monto<input inputMode="numeric" value={draft.monto} onChange={(event) => setDraft({ ...draft, monto: formatAmountInput(event.target.value) })} placeholder="0" required /><small className="field-hint">Colones, sin decimales</small></label><label>Detalle<textarea value={draft.detalle} onChange={(event) => setDraft({ ...draft, detalle: event.target.value })} rows={3} placeholder="Describe el gasto" required /></label><ErrorMessage error={error} /><div className="form-actions two-actions"><button type="button" className="button button-secondary" onClick={reset}>Cancelar</button><button className="button button-primary" disabled={saving}>{saving ? 'Guardando…' : 'Guardar gasto'}</button></div></form> : null}
+    {loading ? <Loading /> : <ErrorMessage error={showForm ? null : error} />}
+    {!loading && !error && summary ? <ExpenseSummary summary={summary} /> : null}
+    {!loading && !error ? <section className="expenses-list-section" aria-labelledby="expenses-list-title"><div className="maintenance-list-heading"><h2 id="expenses-list-title">Gastos registrados</h2><span className="field-hint">Más recientes primero</span></div>{expenses.length === 0 ? <div className="empty-state compact"><h2>No hay gastos registrados</h2><p>Registra el primer gasto del negocio.</p></div> : <div className="expenses-list">{expenses.map((expense) => <article className="expense-row" key={expense.id}><div className="expense-row-main"><strong>{expense.detalle}</strong><span>{formatDate(expense.fecha_registro)}</span></div><strong className="amount">{formatCurrency(expense.monto)}</strong></article>)}</div>}</section> : null}
   </main></div>;
 }
 
@@ -307,6 +378,7 @@ function App() {
   useEffect(() => { const handleHash = () => setRoute(readRoute()); window.addEventListener('hashchange', handleHash); return () => window.removeEventListener('hashchange', handleHash); }, []);
   if (route.page === 'home') return <HomePage />;
   if (route.page === 'history') return <HistoryPage />;
+  if (route.page === 'expenses') return <ExpensePage />;
   if (route.page === 'new') return <OrderFormPage />;
   if (route.page === 'maintenance' && route.kind === 'clientes') return <ClientMaintenancePage />;
   if (route.page === 'maintenance' && (route.kind === 'panes' || route.kind === 'ingredientes')) return <CatalogMaintenancePage kind={route.kind} />;

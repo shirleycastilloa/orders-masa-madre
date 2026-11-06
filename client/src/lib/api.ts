@@ -31,6 +31,26 @@ export type Order = {
   ingrediente_adicional: string;
 };
 
+export type Expense = {
+  id: number;
+  fecha_registro: string;
+  monto: number;
+  detalle: string;
+};
+
+export type ExpenseSummary = {
+  total_gastos: number;
+  total_pagadas: number;
+  total_pendientes: number;
+  ganancias_netas: number;
+  ganancias_brutas: number;
+};
+
+export type ExpensesResponse = {
+  gastos: Expense[];
+  resumen: ExpenseSummary;
+};
+
 type ErrorPayload = {
   error?: { message?: string; fields?: Record<string, string> };
 };
@@ -61,6 +81,8 @@ export const api = {
   createClient: (body: Partial<Client> & { alias: string }) => request<Client>('/clientes', { method: 'POST', body: JSON.stringify(body) }),
   updateClient: (id: number, body: Partial<Client>) => request<Client>(`/clientes/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
   deleteClient: (id: number) => request<null>(`/clientes/${id}`, { method: 'DELETE' }),
+  getExpenses: () => request<ExpensesResponse>('/gastos'),
+  createExpense: (body: { monto: number; detalle: string }) => request<Expense>('/gastos', { method: 'POST', body: JSON.stringify(body) }),
   createBreadType: (tipo: string) => request<CatalogItem>('/catalogos/tipos-pan', { method: 'POST', body: JSON.stringify({ tipo }) }),
   updateBreadType: (id: number, tipo: string) => request<CatalogItem>(`/catalogos/tipos-pan/${id}`, { method: 'PATCH', body: JSON.stringify({ tipo }) }),
   deleteBreadType: (id: number) => request<null>(`/catalogos/tipos-pan/${id}`, { method: 'DELETE' }),

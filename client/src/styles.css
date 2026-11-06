@@ -22,7 +22,7 @@ h1 { margin-bottom: 0; font-family: Georgia, serif; font-size: clamp(1.7rem, 8vw
 h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .breadmark { color: #a4643c; font-size: 1.8rem; }
 .icon-button { width: 44px; padding: 0; border: 0; border-radius: 50%; color: #7b3f26; background: #ead7c5; font-size: 1.5rem; }
-.top-actions { display: grid; grid-template-columns: 1.35fr 1fr; gap: .65rem; padding-bottom: 1.2rem; }
+.top-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; padding-bottom: 1.2rem; }
 .maintenance-panel { margin-bottom: 1.4rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: rgb(255 253 249 / 82%); }
 .maintenance-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; }
 .maintenance-title { display: grid; gap: .2rem; }
@@ -94,6 +94,27 @@ h2 { margin-bottom: .8rem; font-family: Georgia, serif; font-size: 1.25rem; }
 .summary-card-count { font-size: 1.05rem !important; }
 .summary-card.is-paid { color: #226b4e; background: #e0f0e7; }
 .summary-card.is-pending { color: #b42318; background: #fde3e1; }
+.expenses-page { display: grid; gap: 1rem; }
+.expenses-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.expenses-heading .maintenance-description { margin-bottom: 0; }
+.expense-summary { display: grid; gap: .8rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: rgb(255 253 249 / 82%); }
+.expense-summary h2 { margin: 0; color: #674f43; font-size: 1.1rem; }
+.expense-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.expense-summary-card { display: grid; gap: .35rem; padding: .8rem; border-radius: .75rem; }
+.expense-summary-card span { font-size: .78rem; font-weight: 800; }
+.expense-summary-card strong { font-size: 1.1rem; }
+.expense-summary-card.is-expense { color: #7b3f26; background: #f5e5d7; }
+.expense-summary-card.is-paid, .expense-summary-card.is-net { color: #226b4e; background: #e0f0e7; }
+.expense-summary-card.is-pending { color: #b42318; background: #fde3e1; }
+.expense-summary-card.is-gross { color: #2563eb; background: #e4edff; }
+.expense-form { margin-bottom: .2rem; }
+.expenses-list-section { display: grid; gap: .8rem; }
+.expenses-list { display: grid; gap: .6rem; }
+.expense-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 4.2rem; padding: .8rem 1rem; border: 1px solid #eadfd5; border-radius: .8rem; background: #fffdf9; box-shadow: 0 .3rem 1rem rgb(74 45 27 / 5%); }
+.expense-row-main { display: grid; min-width: 0; gap: .25rem; }
+.expense-row-main strong { overflow: hidden; text-overflow: ellipsis; }
+.expense-row-main span { color: #8c7568; font-size: .78rem; }
+.expense-row > .amount { white-space: nowrap; }
 .order-form { display: grid; gap: 1rem; padding: 1rem; border: 1px solid #eadfd5; border-radius: 1rem; background: #fffdf9; box-shadow: 0 .45rem 1.4rem rgb(74 45 27 / 7%); }
 label { display: grid; gap: .4rem; color: #674f43; font-size: .86rem; font-weight: 750; }
 input, select { width: 100%; padding: .65rem .75rem; border: 1px solid #d8c4b4; border-radius: .65rem; color: #2d211c; background: #fff; outline: none; }
@@ -145,6 +166,7 @@ textarea:focus { border-color: #a4643c; box-shadow: 0 0 0 3px rgb(164 100 60 / 1
   .maintenance-menu-toggle { display: none; }
   .maintenance-actions, .maintenance-panel.is-open .maintenance-actions { display: grid; grid-template-columns: repeat(3, 1fr); }
   .maintenance-panel { padding: 1.2rem; }
+  .expense-summary-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 
 @media (min-width: 900px) {
