@@ -27,6 +27,7 @@ La aplicación no tiene autenticación ni autorización por decisión de alcance
 - Mantenimiento de ingredientes adicionales: crear, editar y eliminar cuando no están siendo utilizados.
 - Módulo de Gastos disponible en `/gastos`, con registro de monto y detalle, fecha automática de registro y listado del gasto más reciente al más antiguo.
 - Resumen financiero de Gastos: total de gastos, total de órdenes pagadas, total de órdenes pendientes, ganancias netas (`pagadas - gastos`) y ganancias brutas (`pagadas + pendientes - gastos`). Los totales de órdenes consideran registros activos e históricos.
+- En móvil, el resumen financiero se presenta en tres filas: total de gastos; pagadas y pendientes; ganancias netas y brutas.
 - Selector de hora con presentación AM/PM y montos con separador de miles sin decimales.
 - Validación en frontend y backend.
 - Health check disponible en `/api/health`.

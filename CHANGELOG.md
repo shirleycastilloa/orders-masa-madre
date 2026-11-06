@@ -7,6 +7,7 @@
 - Se agregó el registro de gastos con monto, detalle y fecha automática según `APP_TIMEZONE`.
 - Se agregó el listado de gastos ordenado de la fecha más actual a la más antigua.
 - Se agregó el resumen financiero con total de gastos, órdenes pagadas, órdenes pendientes, ganancias netas y ganancias brutas.
+- Se ajustó el resumen financiero para mostrar una distribución de tres filas en dispositivos móviles.
 - Se agregaron pruebas E2E para consultar y registrar gastos.
 
 ## Versión 0.1.2 — 2026-10-31
